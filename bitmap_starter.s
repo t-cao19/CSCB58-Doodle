@@ -33,6 +33,27 @@ loop:
 	bne $t4, $t5, loop
 	# Try to paint the whole screen green
 	
+platform:
+	lw $t0, displayAddress
+	sw $t1, 48($t0)
+	sw $t1, 52($t0)
+	sw $t1, 56($t0)
+	sw $t1, 60($t0)
+	sw $t1, 64($t0)
+	sw $t1, 68($t0)
+	sw $t1, 72($t0)
+	sw $t1, 76($t0)
+	sw $t1, 80($t0)
+	
+	sw $t1, 304($t0)
+	sw $t1, 308($t0)
+	sw $t1, 312($t0)
+	sw $t1, 316($t0)
+	sw $t1, 320($t0)
+	sw $t1, 324($t0)
+	sw $t1, 328($t0)
+	sw $t1, 332($t0)
+	sw $t1, 336($t0)
 
 Exit:
 	li $v0, 10 # terminate the program gracefully
