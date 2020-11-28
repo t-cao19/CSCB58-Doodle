@@ -37,7 +37,7 @@
 	screenHeight: 	.word 32
 	platformWidth: .word  6
 	screenSize: .word 1024
-	platforms: .space 20
+	platforms: .space 24
 	
 .text
 main:
@@ -45,7 +45,7 @@ main:
 	li $t1, 0xdeb887	# $t1 stores the brown
 	li $t2, 0xf5f5dc	# $t2 stores the beige colour
 	la $t8, platforms 	# Array with 6 int spots for platform locations
-	lw $t9, screenSize
+	lw $t9, screenSize	# Screen size
 	
 	
 # Fill screen with background colour
@@ -58,14 +58,14 @@ backgroundloop:
 	addi $t3, $t3, 1
 	bne $t3, $t9, backgroundloop
 
-# Attempt to draw 3 platforms onto the background
-		
-generateplatform:
+platformInit:
 	lw $t0, displayAddress
-	addi $t4, $t4, 0 # Counter
-	
-randomplatform:
-	add $t5, $t8, $t4
+	addi $t3, $t3, 0 	# Counter/Offset for the array
+	addu $t4, $t4, $zero	# Counter for number of platforms to generate
+
+		
+generatePlatform:
+	add $t5, $t8, $t3 	# Current array location
 
 	# Generate a random platform coordinate
 	li $v0, 42
@@ -73,41 +73,28 @@ randomplatform:
 	li $a1, 1024
 	syscall
 	
-	# Store the randomly generated coordinate
+	# Multiply the platform by 4
 	li $t6, 4
 	mult $a0, $t6
-	mflo $t7
-	add $t3, $t0, $t7
-	sw $t3, 0($t5)
-	addi $t4, $t4, 4
-	bne $t4, 20, randomplatform
+	mflo $t6
+	add $t7, $t0, $t6
 	
-	#add $t3, $t0, $a0
-	#addi $t3, $t0, 2264
-	#sw $t3, 0($t7)
-	#addi $t3, $t0, 2736
-	#sw $t3, 4($t7)
-	#addi $t3, $t0, 3072
-	#sw $t3, 8($t7)
-	#addi $t3, $t0, 1816
-	#sw $t3, 12($t7)
-	#addi $t3, $t0, 1476
-	#sw $t3, 16($t7)
+	# Store the platform location
+	sw $t7, 0($t5)
+	addi $t3, $t3, 4
+	# bne $t4, 24, randomplatform
 	
-	li $t6, 0
+	li $t6, 0 		# Counter for pixel width
+	lw $a0, platformWidth
 	
-platformloop:
-	add $t3, $t8, $t6 # Offset/index variable i
-	lw $s4, 0($t3)    # Load the element from that position# Get to that position of the screen
-	sw $t1, 0($s4)
-	sw $t1, 4($s4)
-	sw $t1, 8($s4)
-	sw $t1, 12($s4)
-	sw $t1, 16($s4)
-	sw $t1, 20($s4)
-	sw $t1, 24($s4)
-	addi $t6, $t6, 4
-	bne $t6, 20, platformloop
+drawPlatform:
+	sw $t1, 0($t7)
+	addi $t7, $t7, 4
+	addi $t6, $t6, 1
+	bne $t6, $a0, drawPlatform
+	
+	addi $t4, $t4, 1
+	bne $t4, 6, generatePlatform
 	
 # Attempt to draw the doodle
 
