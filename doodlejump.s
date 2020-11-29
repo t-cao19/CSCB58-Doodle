@@ -75,7 +75,7 @@ platformInit:
 	lw $t0, displayAddress
 	addi $t3, $t3, 0 			# Counter/Offset for the array
 	addi $t4, $t4, 0			# Counter for number of platforms to generate
-	li $s0, 4096				# Offset for platforms
+	li $s0, 3968				# Offset for platforms
 
 		
 generatePlatform:
@@ -170,7 +170,7 @@ doodleJumpDown:
 	jal keyboardCheck
 	
 	addi $t5, $t4, -3968
-	bgez $t5, initialKeyboardCheck		# TODO: Fix so when reach bottom of screen go to game over or smth
+	bgez $t5, doodleJumpInit		# TODO: Fix so when reach bottom of screen go to game over or smth
 	
 	bne $t6, 8, doodleJumpDown
 	
