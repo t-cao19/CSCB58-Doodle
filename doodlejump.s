@@ -73,9 +73,17 @@ backgroundloop:
 ### Draw + Generate Platforms ##
 platformInit:
 	lw $t0, displayAddress
-	addi $t3, $t3, 0 			# Counter/Offset for the array
+	addi $t3, $t3, 0			# Counter/Offset for the array
 	addi $t4, $t4, 0			# Counter for number of platforms to generate
 	li $s0, 3968				# Offset for platforms
+	
+	li $t6, 0 				# Counter for pixel width
+	lw $a0, platformWidth			# Width of each platform
+	
+baseDoodlePlatform:
+	addi $t7, $t0, 4020
+	sw $t7, 0($t8)
+	j drawPlatform
 
 		
 generatePlatform:
@@ -96,10 +104,8 @@ generatePlatform:
 	
 	# Store the platform location
 	sw $t7, 0($t5)
-	addi $t3, $t3, 4			# Move offset by 4 into next array position
-	
-	li $t6, 0 				# Counter for pixel width
-	lw $a0, platformWidth
+	li $t6, 0
+	lw $a0, platformWidth	
 	
 drawPlatform:
 	# Draw the platform to be platformWidth pixels wide
@@ -110,6 +116,7 @@ drawPlatform:
 	
 	addi $t4, $t4, 1
 	addi $s0, $s0, -640
+	addi $t3, $t3, 4			# Move offset by 4 into next array position
 	bne $t4, 6, generatePlatform
 	
 
