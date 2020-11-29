@@ -119,7 +119,7 @@ doodledraw:
 
 
 ### Check for Keyboard Input ###
-keyboardCheck:
+initialKeyboardCheck:
 	lw $t5, 0xffff0000 
 	beq $t5, 1, keyboardInput
 	
@@ -140,6 +140,8 @@ doodleJumpUp:
 	lw $a0, sleepDelay
 	syscall
 	
+	jal keyboardCheck
+	
 	bne $t6, 8, doodleJumpUp
 	
 doodleJumpDown:	
@@ -156,28 +158,36 @@ doodleJumpDown:
 	lw $a0, sleepDelay
 	syscall
 	
+	jal keyboardCheck
+	
 	addi $t5, $t4, -3968
 	bgez $t5, Exit		# TODO: Fix so when reach bottom of screen go to game over or smth
 	
 	bne $t6, 8, doodleJumpDown
 	
+keyboardCheck:
+	lw $t5, 0xffff0000 
+	beq $t5, 1, keyboardInput
+	
+	jr $ra			# No keyboard input so jump back to whatever we were doing before
+	
 keyboardInput:
 	lw $t5, 0xffff0004 
-	beq $t5, 0x74, leftInput
-	beq $t5, 0x75, rightInput
-	j keyboardCheck		# The key entered wasn't valid, check for valid
+	beq $t5, 0x6A, leftInput
+	beq $t5, 0x6B, rightInput
+	j initialKeyboardCheck		# The key entered wasn't valid, check for valid
 	
 leftInput:
 	addi $t4, $t4, -4	# Move doodle location exactly 1 row up
 	add $t7, $t0, $t4	# pixel of the row one up
-	sw $t2, 4($t7)	# Colour previous doodle spot with background colour
+	sw $t2, 4($t7)		# Colour previous doodle spot with background colour
 	
 	j processMovement	# Colour in the new spot
 	
 rightInput:
 	addi $t4, $t4, 4	# Move doodle location exactly 1 row up
 	add $t7, $t0, $t4	# pixel of the row one up
-	sw $t2, -4($t7)	# Colour previous doodle spot with background colour
+	sw $t2, -4($t7)		# Colour previous doodle spot with background colour
 	
 	j processMovement	# Colour in the new spot
 
@@ -187,7 +197,6 @@ processMovement:
 	sw $a3, 0($t7)		# load new colour
 	
 	jr $ra
-
 
 Exit:
 	li $v0, 10 # terminate the program gracefully
