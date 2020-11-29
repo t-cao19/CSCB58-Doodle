@@ -32,23 +32,35 @@
 #####################################################################
 
 .data
+	# Technical Info
 	displayAddress:	.word	0x10008000
-	screenWidth: 	.word 32
-	screenHeight: 	.word 32
+	screenWidth: 	.word 512
+	screenHeight: 	.word 512
 	platformWidth: .word  6
 	screenSize: .word 1024
+	
+	# Coordinates
 	platforms: .space 24
+	doodleStart: .word 4032
+	
+	# Colours
+	backgroundColour: .word 0xf5f5dc
+	platformColour: .word 0xdeb887
+	doodleColour: .word 0x556b2f
+	
+	# Animation
+	sleepDelay: .word 100
 	
 .text
 main:
-	lw $t0, displayAddress	# $t0 stores the base address for display
-	li $t1, 0xdeb887	# $t1 stores the brown
-	li $t2, 0xf5f5dc	# $t2 stores the beige colour
-	la $t8, platforms 	# Array with 6 int spots for platform locations
-	lw $t9, screenSize	# Screen size
+	lw $t0, displayAddress		# $t0 stores the base address for display
+	lw $t1, platformColour		# $t1 stores the brown
+	lw $t2, backgroundColour	# $t2 stores the beige colour
+	la $t8, platforms 		# Array with 6 int spots for platform locations
+	lw $t9, screenSize		# Screen size
 	
 	
-# Fill screen with background colour
+### Fill Background ###
 backgroundinit: 
 	li $t3, 0 # Counter
 
@@ -58,6 +70,7 @@ backgroundloop:
 	addi $t3, $t3, 1
 	bne $t3, $t9, backgroundloop
 
+### Draw + Generate Platforms ##
 platformInit:
 	lw $t0, displayAddress
 	addi $t3, $t3, 0 	# Counter/Offset for the array
@@ -96,17 +109,85 @@ drawPlatform:
 	addi $t4, $t4, 1
 	bne $t4, 6, generatePlatform
 	
-# Attempt to draw the doodle
 
+### Draw Doodle ###
 doodledraw:
-	li $t3, 0x556b2f	# $t3 stores colour of doodle
-	#addi $t4, $t0, 4028
-	sw $t3, 3776($t0)
-	sw $t3, 3900($t0)
-	sw $t3, 3904($t0)
-	sw $t3, 3908($t0)
-	sw $t3, 4028($t0)
-	sw $t3, 4036($t0)
+	lw $a3, doodleColour	# $a0 stores colour of doodle
+	lw $t4, doodleStart 	# $t4 iis Doodle's centre/location
+	add $t5, $t0, $t4
+	sw $a3, 0($t5)		# Draw the doodle
+
+
+### Check for Keyboard Input ###
+keyboardCheck:
+	lw $t5, 0xffff0000 
+	beq $t5, 1, keyboardInput
+	
+doodleJumpInit:
+	li $t6, 0
+	
+doodleJumpUp:	
+	addi $t4, $t4, -128	# Move doodle location exactly 1 row up
+	add $t7, $t0, $t4	# pixel of the row one up
+	sw $t2, 128($t7)	# Colour previous doodle spot with background colour
+	
+	jal processMovement	# Colour in the new spot
+	
+	addi $t6, $t6, 1
+	
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
+	bne $t6, 8, doodleJumpUp
+	
+doodleJumpDown:	
+	addi $t4, $t4, 128	# Move doodle location exactly 1 row up
+	add $t7, $t0, $t4	# pixel of the row one up
+	sw $t2, -128($t7)	# Colour previous doodle spot with background colour
+	
+	jal processMovement	# Colour in the new spot
+	
+	addi $t6, $t6, -1
+	
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
+	addi $t5, $t4, -3968
+	bgez $t5, Exit		# TODO: Fix so when reach bottom of screen go to game over or smth
+	
+	bne $t6, 8, doodleJumpDown
+	
+keyboardInput:
+	lw $t5, 0xffff0004 
+	beq $t5, 0x74, leftInput
+	beq $t5, 0x75, rightInput
+	j keyboardCheck		# The key entered wasn't valid, check for valid
+	
+leftInput:
+	addi $t4, $t4, -4	# Move doodle location exactly 1 row up
+	add $t7, $t0, $t4	# pixel of the row one up
+	sw $t2, 4($t7)	# Colour previous doodle spot with background colour
+	
+	j processMovement	# Colour in the new spot
+	
+rightInput:
+	addi $t4, $t4, 4	# Move doodle location exactly 1 row up
+	add $t7, $t0, $t4	# pixel of the row one up
+	sw $t2, -4($t7)	# Colour previous doodle spot with background colour
+	
+	j processMovement	# Colour in the new spot
+
+
+processMovement:
+	lw $t3, 0($t7)		# save new colour at location
+	sw $a3, 0($t7)		# load new colour
+	
+	jr $ra
+
 
 Exit:
 	li $v0, 10 # terminate the program gracefully
