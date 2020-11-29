@@ -124,15 +124,21 @@ doodledraw:
 ### Check for Keyboard Input ###
 initialKeyboardCheck:
 	lw $t5, 0xffff0000 
-	beq $t5, 1, keyboardInput
+	beq $t5, 1, startGame
+	
+startGame:
+	lw $t5, 0xffff0004 
+	bne $t5, 0x73, initialKeyboardCheck
+	
 	
 doodleJumpInit:
 	li $t6, 0
+	move $t3, $t2
 	
 doodleJumpUp:	
 	addi $t4, $t4, -128			# Move doodle location exactly 1 row up
 	add $t7, $t0, $t4			# pixel of the row one up
-	sw $t2, 128($t7)			# Colour previous doodle spot with background colour
+	sw $t3, 128($t7)			# Colour previous doodle spot with background colour
 	
 	jal processMovement			# Colour in the new spot
 	
@@ -150,7 +156,7 @@ doodleJumpUp:
 doodleJumpDown:	
 	addi $t4, $t4, 128			# Move doodle location exactly 1 row up
 	add $t7, $t0, $t4			# pixel of the row one up
-	sw $t2, -128($t7)			# Colour previous doodle spot with background colour
+	sw $t3, -128($t7)			# Colour previous doodle spot with background colour
 	
 	jal processMovement			# Colour in the new spot
 	
@@ -196,8 +202,8 @@ rightInput:
 
 
 processMovement:
-	lw $t3, 0($t7)				# save new colour at location
-	sw $a3, 0($t7)				# load new colour
+	lw $t3, 0($t7)				# save colour at the new location
+	sw $a3, 0($t7)				# load doodle colour at new location
 	
 	jr $ra
 
