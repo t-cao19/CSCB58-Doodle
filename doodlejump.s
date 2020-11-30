@@ -237,33 +237,8 @@ retrievePlatform:
 	addi $s0, $t8, 24			# 6 pixels down from platform
 	
 checkDoodleOnPlatform:
-	beq $s7, $t8, doodleOnPlatform		# Doodle is on the platform
-	
-	# Print location of current platform
-	#li $v0, 4
-	#la $a0, doodleLocation
-	#syscall
-
-	#move $a0, $s7	
-	#li $v0, 1
-	#syscall 
-	
-	#li $v0, 4 		# system call code for print_string
-	#la $a0, newline 	# address of string to print
-	#syscall 		# print the string
-	
-	# Print location of current platform
-	#li $v0, 4
-	#la $a0, platformLocation
-	#syscall
-
-	#move $a0, $t8	
-	#li $v0, 1
-	#syscall 
-	
-	#li $v0, 4 		# system call code for print_string
-	#la $a0, newline 	# address of string to print
-	#syscall 		# print the string		
+	add $t9, $gp, $s7			# Address of doodle
+	beq $t9, $t8, doodleOnPlatform		# Doodle is on the platform	
 	
 	addi $t8, $t8, 4
 	
@@ -274,15 +249,13 @@ checkDoodleOnPlatform:
 	
 	j doodleNotOnPlatform
 
-doodleOnPlatform:
-	li $v0, 4
-	la $a0, testing
-	syscall
-
+doodleOnPlatform:	
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 	
 	lw $ra, 0($sp)				# Load back the return address
 	addi $sp, $sp, 4			# Shrink the stack back
+	
+	lw $t3, backgroundColour		# Background colour where doodle was
 	
 	jr $ra
 		
