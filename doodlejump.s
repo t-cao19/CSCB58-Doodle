@@ -51,18 +51,25 @@
 	# Animation
 	sleepDelay: .word 100
 	
+	# Testing
+	testing: .asciiz "Goes in here "
+	doodleLocation: .asciiz "Doodle location is "
+	platformLocation: .asciiz "Platform location is"
+	newline: .asciiz "\n"
+	
 .text
 main:
-	lw $t0, displayAddress			# $t0 stores the base address for display
+	#lw $t0, displayAddress			# $t0/$gp stores the base address for display
 	lw $t1, platformColour			# $t1 stores the brown
 	lw $t2, backgroundColour		# $t2 stores the beige colour
-	la $t8, platforms 			# Array with 6 int spots for platform locations
+	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
 	
 	
 ### Fill Background ###
 backgroundinit: 
 	li $t3, 0 				# Counter for filling in background
+	lw $t0, displayAddress
 
 backgroundloop:
 	sw $t2, 0($t0)
@@ -73,7 +80,7 @@ backgroundloop:
 ### Draw + Generate Platforms ##
 platformInit:
 	lw $t0, displayAddress
-	addi $t3, $t3, 0			# Counter/Offset for the array
+	addi $t3, $zero, 0			# Counter/Offset for the array
 	addi $t4, $t4, 0			# Counter for number of platforms to generate
 	li $s0, 3968				# Offset for platforms
 	
@@ -81,13 +88,13 @@ platformInit:
 	lw $a0, platformWidth			# Width of each platform
 	
 baseDoodlePlatform:
-	addi $t7, $t0, 4020
-	sw $t7, 0($t8)
+	addi $t7, $gp, 4020
+	sw $t7, 0($s6)
 	j drawPlatform
 
 		
 generatePlatform:
-	add $t5, $t8, $t3 			# Current array location
+	add $t5, $s6, $t3 			# Current array location
 
 	# Generate a random platform coordinate
 	li $v0, 42
@@ -99,7 +106,7 @@ generatePlatform:
 	li $t6, 4
 	mult $a0, $t6
 	mflo $t6
-	add $t7, $t0, $t6
+	add $t7, $gp, $t6
 	add $t7, $t7, $s0
 	
 	# Store the platform location
@@ -122,9 +129,10 @@ drawPlatform:
 
 ### Draw Doodle ###
 doodledraw:
-	lw $a3, doodleColour			# $a0 stores colour of doodle
-	lw $t4, doodleStart 			# $t4 iis Doodle's centre/location
-	add $t5, $t0, $t4
+	lw $a3, doodleColour			# $a3 stores colour of doodle
+	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
+	add $t5, $gp, $s7
+	
 	sw $a3, 0($t5)				# Draw the doodle
 
 
@@ -140,11 +148,11 @@ startGame:
 	
 doodleJumpInit:
 	li $t6, 0
-	move $t3, $t2
+	move $t3, $t2				# Initial colour
 	
 doodleJumpUp:	
-	addi $t4, $t4, -128			# Move doodle location exactly 1 row up
-	add $t7, $t0, $t4			# pixel of the row one up
+	addi $s7, $s7, -128			# Move doodle location exactly 1 row up
+	add $t7, $gp, $s7			# pixel of the row one up
 	sw $t3, 128($t7)			# Colour previous doodle spot with background colour
 	
 	jal processMovement			# Colour in the new spot
@@ -156,13 +164,14 @@ doodleJumpUp:
 	lw $a0, sleepDelay
 	syscall
 	
-	jal keyboardCheck
+	jal keyboardCheck			# Check if any of the keys are pressed
+	jal checkPlatformInit			# Check if the doodle has reached any of the platforms before jumping again	
 	
 	bne $t6, 8, doodleJumpUp
 	
 doodleJumpDown:	
-	addi $t4, $t4, 128			# Move doodle location exactly 1 row up
-	add $t7, $t0, $t4			# pixel of the row one up
+	addi $s7, $s7, 128			# Move doodle location exactly 1 row up
+	add $t7, $gp, $s7			# pixel of the row one up
 	sw $t3, -128($t7)			# Colour previous doodle spot with background colour
 	
 	jal processMovement			# Colour in the new spot
@@ -174,9 +183,10 @@ doodleJumpDown:
 	lw $a0, sleepDelay
 	syscall
 	
-	jal keyboardCheck
+	jal keyboardCheck			# Check if any of the keys are pressed
+	jal checkPlatformInit			# Check if the doodle landed on any of the platforms
 	
-	addi $t5, $t4, -3968
+	addi $t5, $s7, -3968
 	bgez $t5, doodleJumpInit		# TODO: Fix so when reach bottom of screen go to game over or smth
 	
 	bne $t6, 8, doodleJumpDown
@@ -194,15 +204,15 @@ keyboardInput:
 	j initialKeyboardCheck			# The key entered wasn't valid, check for valid
 	
 leftInput:
-	addi $t4, $t4, -4			# Move doodle location exactly 1 pixel left
-	add $t7, $t0, $t4			# pixel of spot to the left
+	addi $s7, $s7, -4			# Move doodle location exactly 1 pixel left
+	add $t7, $gp, $s7			# pixel of spot to the left
 	sw $t2, 4($t7)				# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
 	
 rightInput:
-	addi $t4, $t4, 4			# Move doodle location exactly 1 pixel right
-	add $t7, $t0, $t4			# pixel of spot to the right
+	addi $s7, $s7, 4			# Move doodle location exactly 1 pixel right
+	add $t7, $gp, $s7			# pixel of spot to the right
 	sw $t2, -4($t7)				# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
@@ -213,6 +223,74 @@ processMovement:
 	sw $a3, 0($t7)				# load doodle colour at new location
 	
 	jr $ra
+	
+
+### Check for jumping onto a platform ###
+checkPlatformInit:
+	addi $sp, $sp, -4			# Make space on the stack to store $ra to jump back later, otherwise we're lost
+	sw $ra, 0($sp)
+	li $t4, 0				# Offset for array
+	
+retrievePlatform:
+	add $t5, $s6, $t4			# Array Position
+	lw $t8, 0($t5)				# Load platform coordinate from array
+	addi $s0, $t8, 24			# 6 pixels down from platform
+	
+checkDoodleOnPlatform:
+	beq $s7, $t8, doodleOnPlatform		# Doodle is on the platform
+	
+	# Print location of current platform
+	#li $v0, 4
+	#la $a0, doodleLocation
+	#syscall
+
+	#move $a0, $s7	
+	#li $v0, 1
+	#syscall 
+	
+	#li $v0, 4 		# system call code for print_string
+	#la $a0, newline 	# address of string to print
+	#syscall 		# print the string
+	
+	# Print location of current platform
+	#li $v0, 4
+	#la $a0, platformLocation
+	#syscall
+
+	#move $a0, $t8	
+	#li $v0, 1
+	#syscall 
+	
+	#li $v0, 4 		# system call code for print_string
+	#la $a0, newline 	# address of string to print
+	#syscall 		# print the string		
+	
+	addi $t8, $t8, 4
+	
+	bne $t8, $s0, checkDoodleOnPlatform	# Haven't finished checking all of the platform
+	
+	addi $t4, $t4, 4			# Move to next platform in list (a.k.a finishing checking one platform)
+	bne $t4, 24, retrievePlatform		# Haven't finished checking all the platforms
+	
+	j doodleNotOnPlatform
+
+doodleOnPlatform:
+	li $v0, 4
+	la $a0, testing
+	syscall
+
+	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
+	
+	lw $ra, 0($sp)				# Load back the return address
+	addi $sp, $sp, 4			# Shrink the stack back
+	
+	jr $ra
+		
+doodleNotOnPlatform:
+	#li $t6, 0
+	jr $ra
+
+	
 
 Exit:
 	li $v0, 10 				# terminate the program gracefully
