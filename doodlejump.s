@@ -228,8 +228,13 @@ processMovement:
 ### Check for jumping onto a platform ###
 checkPlatformInit:
 	addi $sp, $sp, -4			# Make space on the stack to store $ra to jump back later, otherwise we're lost
-	sw $ra, 0($sp)
+	sw $ra, 0($sp)				# Pointer back to either doodleJumpUp/doodleJumpDown
 	li $t4, 0				# Offset for array
+	
+	jal retrievePlatform
+	
+	lw $ra, 0($sp)
+	jr $ra
 	
 retrievePlatform:
 	add $t5, $s6, $t4			# Array Position
@@ -249,19 +254,22 @@ checkDoodleOnPlatform:
 	
 	j doodleNotOnPlatform
 
-doodleOnPlatform:	
+doodleOnPlatform:
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 	
 	lw $ra, 0($sp)				# Load back the return address
 	addi $sp, $sp, 4			# Shrink the stack back
 	
-	lw $t3, backgroundColour		# Background colour where doodle was
+	lw $t8, platformColour			# Load platform colour
+	sw $t8, 0($t9)				# Store platform colour where doodle hit platform
 	
-	jr $ra
+	li $t6, 0				# Reset jumping counter
+	lw $t3, backgroundColour		# Replace previous pixels with background colour
+	
+	j doodleJumpUp
 		
 doodleNotOnPlatform:
-	#li $t6, 0
-	jr $ra
+	jr $ra					# Continue back to point in the program
 
 	
 
