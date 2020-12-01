@@ -52,10 +52,10 @@
 	sleepDelay: .word 100
 	
 	# Testing
-	testing: .asciiz "Goes in here "
-	doodleLocation: .asciiz "Doodle location is "
-	platformLocation: .asciiz "Platform location is"
-	newline: .asciiz "\n"
+	#testing: .asciiz "Goes in here "
+	#doodleLocation: .asciiz "Doodle location is "
+	#platformLocation: .asciiz "Platform location is"
+	#newline: .asciiz "\n"
 	
 .text
 main:
@@ -64,6 +64,7 @@ main:
 	lw $t2, backgroundColour		# $t2 stores the beige colour
 	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
+	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	
 	
 ### Fill Background ###
@@ -77,21 +78,15 @@ backgroundloop:
 	addi $t3, $t3, 1
 	bne $t3, $t9, backgroundloop
 
-### Draw + Generate Platforms ##
+### Generate Platforms ##
 platformInit:
 	lw $t0, displayAddress
-	addi $t3, $zero, 0			# Counter/Offset for the array
-	addi $t4, $t4, 0			# Counter for number of platforms to generate
-	li $s0, 3968				# Offset for platforms
-	
-	li $t6, 0 				# Counter for pixel width
-	lw $a0, platformWidth			# Width of each platform
+	li $s0, 3456				# Offset for platforms
 	
 baseDoodlePlatform:
 	addi $t7, $gp, 4020
 	sw $t7, 0($s6)
-	j drawPlatform
-
+	addi $t3, $zero, 4			# Counter/Offset for the array - Set to 4 as need base platform
 		
 generatePlatform:
 	add $t5, $s6, $t3 			# Current array location
@@ -111,26 +106,34 @@ generatePlatform:
 	
 	# Store the platform location
 	sw $t7, 0($t5)
-	li $t6, 0
-	lw $a0, platformWidth	
+	addi $t3, $t3, 4			# Move offset by 4 into next array position
+	addi $s0, $s0, -640
+	bne $t3, 24, generatePlatform
+
+	
+### Draw the Platforms ###	
+drawPlatformInit:
+	li $t4, 0				# Counter for loading array in from memory (i.e. offset)
+	li $t6, 0				# Counter for number of pixels to draw
+	lw $a0, platformWidth			# Width of each platform
 	
 drawPlatform:
-	# Draw the platform to be platformWidth pixels wide
+	add $t5, $s6, $t4
+	lw $t7, 0($t5)
 	sw $t1, 0($t7)
-	addi $t7, $t7, 4
-	addi $t6, $t6, 1
-	bne $t6, $a0, drawPlatform
-	
-	addi $t4, $t4, 1
-	addi $s0, $s0, -640
-	addi $t3, $t3, 4			# Move offset by 4 into next array position
-	bne $t4, 6, generatePlatform
+	sw $t1, 4($t7)
+	sw $t1, 8($t7)
+	sw $t1, 12($t7)
+	sw $t1, 16($t7)
+	sw $t1, 20($t7)
+	addi $t4, $t4, 4
+	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
 	
 
 ### Draw Doodle ###
 doodledraw:
 	lw $a3, doodleColour			# $a3 stores colour of doodle
-	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
+	#lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	add $t5, $gp, $s7
 	
 	sw $a3, 0($t5)				# Draw the doodle
@@ -257,13 +260,14 @@ checkDoodleOnPlatform:
 
 doodleOnPlatform:
 
-	# Sleep to delay animation
+	#Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	li $a0, 32
 	syscall
 	
 	lw $t8, platformColour			# Load platform colour
 	sw $t8, 0($t9)				# Store platform colour where doodle hit platform	
+	
 	
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 	
