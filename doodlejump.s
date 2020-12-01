@@ -99,7 +99,7 @@ generatePlatform:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 32
+	li $a1, 26
 	syscall
 	
 	# Multiply the platform by 4
@@ -167,7 +167,7 @@ doodleJumpUp:
 	jal keyboardCheck			# Check if any of the keys are pressed
 	jal checkPlatformInit			# Check if the doodle has reached any of the platforms before jumping again	
 	
-	bne $t6, 8, doodleJumpUp
+	bne $t6, 10, doodleJumpUp
 	
 doodleJumpDown:	
 	addi $s7, $s7, 128			# Move doodle location exactly 1 row up
@@ -186,10 +186,10 @@ doodleJumpDown:
 	jal keyboardCheck			# Check if any of the keys are pressed
 	jal checkPlatformInit			# Check if the doodle landed on any of the platforms
 	
-	addi $t5, $s7, -3968
-	bgez $t5, doodleJumpInit		# TODO: Fix so when reach bottom of screen go to game over or smth
+	addi $t5, $s7, -4068
+	bgez $t5, Exit				# TODO: Fix so when reach bottom of screen go to game over or smth
 	
-	bne $t6, 8, doodleJumpDown
+	bne $t6, 10, doodleJumpDown
 	
 keyboardCheck:
 	lw $t5, 0xffff0000 
@@ -206,6 +206,7 @@ keyboardInput:
 leftInput:
 	addi $s7, $s7, -4			# Move doodle location exactly 1 pixel left
 	add $t7, $gp, $s7			# pixel of spot to the left
+	lw $t2, backgroundColour		# $t2 stores the beige colour
 	sw $t2, 4($t7)				# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
@@ -213,6 +214,7 @@ leftInput:
 rightInput:
 	addi $s7, $s7, 4			# Move doodle location exactly 1 pixel right
 	add $t7, $gp, $s7			# pixel of spot to the right
+	lw $t2, backgroundColour		# $t2 stores the beige colour
 	sw $t2, -4($t7)				# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
@@ -224,7 +226,6 @@ processMovement:
 	
 	jr $ra
 	
-
 ### Check for jumping onto a platform ###
 checkPlatformInit:
 	addi $sp, $sp, -4			# Make space on the stack to store $ra to jump back later, otherwise we're lost
@@ -255,22 +256,62 @@ checkDoodleOnPlatform:
 	j doodleNotOnPlatform
 
 doodleOnPlatform:
+
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
+	lw $t8, platformColour			# Load platform colour
+	sw $t8, 0($t9)				# Store platform colour where doodle hit platform	
+	
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 	
 	lw $ra, 0($sp)				# Load back the return address
 	addi $sp, $sp, 4			# Shrink the stack back
-	
-	lw $t8, platformColour			# Load platform colour
-	sw $t8, 0($t9)				# Store platform colour where doodle hit platform
-	
-	li $t6, 0				# Reset jumping counter
+
 	lw $t3, backgroundColour		# Replace previous pixels with background colour
 	
+	li $t9, 4				# Counter for platforms array
+	#jal shiftPlatforms
+	
+	li $t6, 0				# Reset jumping counter
 	j doodleJumpUp
 		
 doodleNotOnPlatform:
 	jr $ra					# Continue back to point in the program
 
+
+## Scroll the screen ###
+#shiftPlatforms:
+	# Idea is to subtract 256 (i.e. move the elments 2 rows down)
+#	add $t6, $s6, $t9			# Array offset/position
+#	lw $t2, 0($t6)				# Get platform in that array position
+#	addi $t2, $t2, 256			# Shift platforms 2 row downwards
+#	sw $t2, -4($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
+#	addi $t9, $t9, 4
+#	bne $t9, 24, shiftPlatforms
+	
+	# Generate a random platform coordinate
+#	li $v0, 42
+#	li $a0, 0
+#	li $a1, 26
+#	syscall
+	
+	# Multiply the platform by 4
+#	li $t6, 4
+#	mult $a0, $t6
+#	mflo $t6
+#	add $t9, $gp, $t6
+	#add $t7, $t7, $s0
+	
+	# Store the platform location
+#	sw $t9, 20($s6)				# Store this platform as last one in the array
+	
+#	jr $ra
+	
+#modifyPlatforms:
+			
 	
 
 Exit:
