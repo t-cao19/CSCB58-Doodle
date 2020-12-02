@@ -51,12 +51,6 @@
 	# Animation
 	sleepDelay: .word 100
 	
-	# Testing
-	#testing: .asciiz "Goes in here "
-	#doodleLocation: .asciiz "Doodle location is "
-	#platformLocation: .asciiz "Platform location is"
-	#newline: .asciiz "\n"
-	
 .text
 main:
 	#lw $t0, displayAddress			# $t0/$gp stores the base address for display
@@ -65,7 +59,7 @@ main:
 	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
-	
+	li $s3, 0				# Restart or not
 	
 ### Fill Background ###
 backgroundinit: 
@@ -116,8 +110,14 @@ drawPlatformInit:
 	li $t4, 0				# Counter for loading array in from memory (i.e. offset)
 	li $t6, 0				# Counter for number of pixels to draw
 	lw $a0, platformWidth			# Width of each platform
+	lw $t1, platformColour
 	
 drawPlatform:
+	# Sleep to delay animation
+	#li $v0, 32		
+	#lw $a0, sleepDelay
+	#syscall	
+	
 	add $t5, $s6, $t4
 	lw $t7, 0($t5)
 	sw $t1, 0($t7)
@@ -133,21 +133,23 @@ drawPlatform:
 ### Draw Doodle ###
 doodledraw:
 	lw $a3, doodleColour			# $a3 stores colour of doodle
-	#lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	add $t5, $gp, $s7
-	
 	sw $a3, 0($t5)				# Draw the doodle
 
 
 ### Check for Keyboard Input ###
 initialKeyboardCheck:
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+
 	lw $t5, 0xffff0000 
 	beq $t5, 1, startGame
+	beq $s3, 1, doodleJumpInit
 	
 startGame:
 	lw $t5, 0xffff0004 
 	bne $t5, 0x73, initialKeyboardCheck
-	
 	
 doodleJumpInit:
 	li $t6, 0
@@ -247,7 +249,7 @@ retrievePlatform:
 	
 checkDoodleOnPlatform:
 	add $t9, $gp, $s7			# Address of doodle
-	beq $t9, $t8, doodleOnPlatform		# Doodle is on the platform	
+	beq $t9, $t8, doodleOnPlatform		# Doodle is on the platform, $t8 is the PLATFORM that was "hit"	
 	
 	addi $t8, $t8, 4
 	
@@ -265,9 +267,8 @@ doodleOnPlatform:
 	li $a0, 32
 	syscall
 	
-	lw $t8, platformColour			# Load platform colour
-	sw $t8, 0($t9)				# Store platform colour where doodle hit platform	
-	
+	lw $t0, platformColour			# Load platform colour
+	sw $t0, 0($t9)				# Store platform colour where doodle hit platform	
 	
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 	
@@ -277,9 +278,27 @@ doodleOnPlatform:
 	lw $t3, backgroundColour		# Replace previous pixels with background colour
 	
 	li $t9, 4				# Counter for platforms array
-	#jal shiftPlatforms
-	
 	li $t6, 0				# Reset jumping counter
+	
+	
+	# We only want to shift platforms IFF we are not on a platform at bottom of the screen
+	lw $t0, 0($s6)
+	beq $t8, $t0, doodleJumpUp
+	add $t0, $t0, 4
+	beq $t8, $t0, doodleJumpUp
+	add $t0, $t0, 4
+	beq $t8, $t0, doodleJumpUp
+	add $t0, $t0, 4
+	beq $t8, $t0, doodleJumpUp
+	add $t0, $t0, 4
+	beq $t8, $t0, doodleJumpUp
+	add $t0, $t0, 4
+	beq $t8, $t0, doodleJumpUp
+	add $t0, $t0, 4
+	
+	add $t9, $zero, 4
+	
+	j shiftPlatforms
 	j doodleJumpUp
 		
 doodleNotOnPlatform:
@@ -287,36 +306,57 @@ doodleNotOnPlatform:
 
 
 ## Scroll the screen ###
-#shiftPlatforms:
-	# Idea is to subtract 256 (i.e. move the elments 2 rows down)
-#	add $t6, $s6, $t9			# Array offset/position
-#	lw $t2, 0($t6)				# Get platform in that array position
-#	addi $t2, $t2, 256			# Shift platforms 2 row downwards
-#	sw $t2, -4($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
-#	addi $t9, $t9, 4
-#	bne $t9, 24, shiftPlatforms
+shiftPlatforms:
+	
+	lw $a2, 0($s6)
+	jal clearOldPlatforms
+
+	add $t6, $s6, $t9			# Array offset/position
+	lw $a2, 0($t6)				# Get platform in that array position
+	jal clearOldPlatforms
+	addi $a2, $a2, 384			# Shift platforms 2 row downwards
+	sw $a2, -4($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
+	addi $t9, $t9, 4
+	bne $t9, 24, shiftPlatforms
+	
 	
 	# Generate a random platform coordinate
-#	li $v0, 42
-#	li $a0, 0
-#	li $a1, 26
-#	syscall
+	li $v0, 42
+	li $a0, 0
+	li $a1, 26
+	syscall
 	
 	# Multiply the platform by 4
-#	li $t6, 4
-#	mult $a0, $t6
-#	mflo $t6
-#	add $t9, $gp, $t6
-	#add $t7, $t7, $s0
+	li $t6, 4
+	mult $a0, $t6
+	mflo $t6
+	add $t9, $gp, $t6
 	
 	# Store the platform location
-#	sw $t9, 20($s6)				# Store this platform as last one in the array
+	sw $t9, 20($s6)				# Store this platform as last one in the array
 	
-#	jr $ra
+	# Sleep to delay animation
+	li $v0, 32		
+	li $a0, 32
+	syscall
 	
-#modifyPlatforms:
+	li $s3, 1
+	j drawPlatformInit
+	
+clearOldPlatforms:
+	li $v0, 32		
+	li $a0, 32
+	syscall
+
+	lw $t2, backgroundColour
+	sw $t2, 0($a2)
+	sw $t2, 4($a2)
+	sw $t2, 8($a2)
+	sw $t2, 12($a2)
+	sw $t2, 16($a2)
+	sw $t2, 20($a2)
+	jr $ra
 			
-	
 
 Exit:
 	li $v0, 10 				# terminate the program gracefully
