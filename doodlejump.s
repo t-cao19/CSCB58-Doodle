@@ -104,12 +104,12 @@ generatePlatform:
 	bne $t3, 24, generatePlatform
 	
 ### Fill Background ###
-backgroundInit: 
+backgroundInit:
 	# Sleep to delay animation
 	li $v0, 32		
 	lw $a0, sleepDelay
 	syscall
-
+  
 	li $t3, 0 				# Counter for filling in background
 	lw $t0, displayAddress
 	lw $t2, backgroundColour		# $t2 stores the beige colour
@@ -119,18 +119,13 @@ backgroundLoop:
 	sw $t2, 0($t0)
 	add $t0, $t0, 4				 # Move along the screen
 	addi $t3, $t3, 1
-	
-	# Currently Painting Screen
- 	li $v0, 4
- 	la $a0, paintingScreen
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 		
-	
 	bne $t3, $t9, backgroundLoop
-
+	
+### Draw Doodle ###
+doodledraw:
+	lw $a3, doodleColour			# $a3 stores colour of doodle
+	add $t5, $gp, $s7
+	sw $a3, 0($t5)				# Draw the doodle
 	
 ### Draw the Platforms ###	
 drawPlatformInit:
@@ -138,7 +133,7 @@ drawPlatformInit:
 	li $t6, 0				# Counter for number of pixels to draw
 	lw $a0, platformWidth			# Width of each platform
 	lw $t1, platformColour
-	
+		
 drawPlatform:	
 	add $t5, $s6, $t4
 	lw $t7, 0($t5)
@@ -150,33 +145,8 @@ drawPlatform:
 	sw $t1, 20($t7)
 	addi $t4, $t4, 4
 	
-	# Currently Painting Screen
- 	li $v0, 4
- 	la $a0, paintingPlatforms
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 
-	
 	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
-
-### Draw Doodle ###
-doodledraw:
-	lw $a3, doodleColour			# $a3 stores colour of doodle
-	add $t5, $gp, $s7
-	sw $a3, 0($t5)				# Draw the doodle
 	
-	# Currently Painting Screen
- 	li $v0, 4
- 	la $a0, paintingDoodle
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 
-	
-
 ### Check for Keyboard Input ###
 initialKeyboardCheck:
 	lw $t5, 0xffff0000 
@@ -300,15 +270,6 @@ checkDoodleOnPlatform:
 
 doodleOnPlatform:
 	
-	# Currently Painting Screen
- 	li $v0, 4
- 	la $a0, onPlatforms
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 
-	
 	lw $t0, platformColour			# Load platform colour
 	sw $t0, 0($t9)				# Store platform colour where doodle hit platform	
 	
@@ -338,6 +299,8 @@ doodleOnPlatform:
 	beq $t8, $t0, doodleJumpUp
 	add $t0, $t0, 4
 	
+	jal processMovement
+	
 	add $t9, $zero, $zero
 	
 	j shiftPlatforms
@@ -349,52 +312,14 @@ doodleNotOnPlatform:
 
 ## Scroll the screen ###
 shiftPlatforms:
+		
+	add $t6, $s6, $t9			# Array offset/position
+	lw $a2, 4($t6)				# Get platform in that array position
+	addi $a2, $a2, 384			# Shift platforms 3 rows downwards
+	sw $a2, 0($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
+	addi $t9, $t9, 4
+	bne $t9, 20, shiftPlatforms
 	
-	 # Currently Painting Screen
- 	li $v0, 4
- 	la $a0, startShiftingPlatforms
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 
-	
-	lw $a2, 4($s6)
-	addi $a2, $a2, 384
-	sw $a2, 0($s6)
-	
-	lw $a2, 8($s6)
-	addi $a2, $a2, 384
-	sw $a2, 4($s6)
-	
-	lw $a2, 12($s6)
-	addi $a2, $a2, 384
-	sw $a2, 8($s6)
-	
-	lw $a2, 16($s6)
-	addi $a2, $a2, 384
-	sw $a2, 12($s6)
-
-	lw $a2, 20($s6)
-	addi $a2, $a2, 384
-	sw $a2, 16($s6)
-	
-	
-	#add $t6, $s6, $t9			# Array offset/position
-	#lw $a2, 4($t6)				# Get platform in that array position
-	#addi $a2, $a2, 384			# Shift platforms 3 rows downwards
-	#sw $a2, 0($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
-	#addi $t9, $t9, 4
-	#bne $t9, 20, shiftPlatforms
-	
-	# Currently Painting Screen
- 	li $v0, 4
- 	la $a0, shiftingPlatforms
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 
 	
 	# Generate a random platform coordinate
 	li $v0, 42
@@ -410,20 +335,7 @@ shiftPlatforms:
 	
 	# Store the platform location
 	sw $t9, 20($s6)				# Store this platform as last one in the array
-	
-	# Sleep to delay animation
-	li $v0, 32		
-	li $a0, 20
-	syscall
-	
-	# Currently Painting Screen
- 	li $v0, 4
- 	la $a0, endShiftingPlatforms
- 	syscall
- 	
- 	li $v0, 4 		
- 	la $a0, newline 	
- 	syscall 
+
 	
 	li $s3, 1
 	j backgroundInit
