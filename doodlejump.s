@@ -61,17 +61,6 @@ main:
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
 	
-### Fill Background ###
-backgroundinit: 
-	li $t3, 0 				# Counter for filling in background
-	lw $t0, displayAddress
-
-backgroundloop:
-	sw $t2, 0($t0)
-	add $t0, $t0, 4				 # Move along the screen
-	addi $t3, $t3, 1
-	bne $t3, $t9, backgroundloop
-
 ### Generate Platforms ##
 platformInit:
 	lw $t0, displayAddress
@@ -103,7 +92,29 @@ generatePlatform:
 	addi $t3, $t3, 4			# Move offset by 4 into next array position
 	addi $s0, $s0, -640
 	bne $t3, 24, generatePlatform
+	
+### Fill Background ###
+backgroundInit: 
+	# Sleep to delay animation
+	#li $v0, 32		
+	#lw $a0, sleepDelay
+	#syscall
+	
+	li $t3, 0 				# Counter for filling in background
+	lw $t0, displayAddress
 
+backgroundLoop:
+	lw $t2, backgroundColour		# $t2 stores the beige colour
+	lw $t9, screenSize			# Screen size
+	sw $t2, 0($t0)
+	add $t0, $t0, 4				 # Move along the screen
+	addi $t3, $t3, 1
+	bne $t3, $t9, backgroundLoop
+
+	# Sleep to delay animation
+	#li $v0, 32		
+	#lw $a0, sleepDelay
+	#syscall
 	
 ### Draw the Platforms ###	
 drawPlatformInit:
@@ -112,11 +123,12 @@ drawPlatformInit:
 	lw $a0, platformWidth			# Width of each platform
 	lw $t1, platformColour
 	
-drawPlatform:
 	# Sleep to delay animation
 	#li $v0, 32		
 	#lw $a0, sleepDelay
-	#syscall	
+	#syscall
+	
+drawPlatform:	
 	
 	add $t5, $s6, $t4
 	lw $t7, 0($t5)
@@ -127,22 +139,28 @@ drawPlatform:
 	sw $t1, 16($t7)
 	sw $t1, 20($t7)
 	addi $t4, $t4, 4
+	
 	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
 	
+	# Sleep to delay animation
+	#li $v0, 32		
+	#lw $a0, sleepDelay
+	#syscall
 
 ### Draw Doodle ###
 doodledraw:
 	lw $a3, doodleColour			# $a3 stores colour of doodle
 	add $t5, $gp, $s7
 	sw $a3, 0($t5)				# Draw the doodle
+	
+	# Sleep to delay animation
+	#li $v0, 32		
+	#lw $a0, sleepDelay
+	#syscall
 
 
 ### Check for Keyboard Input ###
 initialKeyboardCheck:
-	li $v0, 32		
-	lw $a0, sleepDelay
-	syscall
-
 	lw $t5, 0xffff0000 
 	beq $t5, 1, startGame
 	beq $s3, 1, doodleJumpInit
@@ -192,7 +210,7 @@ doodleJumpDown:
 	jal checkPlatformInit			# Check if the doodle landed on any of the platforms
 	
 	addi $t5, $s7, -4068
-	bgez $t5, Exit				# TODO: Fix so when reach bottom of screen go to game over or smth
+	bgez $t5, main				# TODO: Fix so when reach bottom of screen go to game over or smth
 	
 	bne $t6, 10, doodleJumpDown
 	
@@ -221,7 +239,7 @@ rightInput:
 	add $t7, $gp, $s7			# pixel of spot to the right
 	lw $t2, backgroundColour		# $t2 stores the beige colour
 	sw $t2, -4($t7)				# Colour previous doodle spot with background colour
-	
+		
 	j processMovement			# Colour in the new spot
 
 
@@ -264,7 +282,7 @@ doodleOnPlatform:
 
 	#Sleep to delay animation
 	li $v0, 32		
-	li $a0, 32
+	li $a0, 100
 	syscall
 	
 	lw $t0, platformColour			# Load platform colour
@@ -296,7 +314,7 @@ doodleOnPlatform:
 	beq $t8, $t0, doodleJumpUp
 	add $t0, $t0, 4
 	
-	add $t9, $zero, 4
+	add $t9, $zero, $zero
 	
 	j shiftPlatforms
 	j doodleJumpUp
@@ -307,18 +325,20 @@ doodleNotOnPlatform:
 
 ## Scroll the screen ###
 shiftPlatforms:
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
 	
-	lw $a2, 0($s6)
-	jal clearOldPlatforms
-
 	add $t6, $s6, $t9			# Array offset/position
-	lw $a2, 0($t6)				# Get platform in that array position
-	jal clearOldPlatforms
-	addi $a2, $a2, 384			# Shift platforms 2 row downwards
-	sw $a2, -4($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
+	lw $a2, 4($t6)				# Get platform in that array position
+	addi $a2, $a2, 384			# Shift platforms 3 rows downwards
+	sw $a2, 0($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
 	addi $t9, $t9, 4
-	bne $t9, 24, shiftPlatforms
+	bne $t9, 20, shiftPlatforms
 	
+	lw $a2, 20($s6)
+	#jal clearOldPlatforms
 	
 	# Generate a random platform coordinate
 	li $v0, 42
@@ -337,27 +357,12 @@ shiftPlatforms:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	li $a0, 32
+	li $a0, 100
 	syscall
 	
 	li $s3, 1
-	j drawPlatformInit
+	j backgroundInit
 	
-clearOldPlatforms:
-	li $v0, 32		
-	li $a0, 32
-	syscall
-
-	lw $t2, backgroundColour
-	sw $t2, 0($a2)
-	sw $t2, 4($a2)
-	sw $t2, 8($a2)
-	sw $t2, 12($a2)
-	sw $t2, 16($a2)
-	sw $t2, 20($a2)
-	jr $ra
-			
-
 Exit:
 	li $v0, 10 				# terminate the program gracefully
 	syscall
