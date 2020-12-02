@@ -87,8 +87,9 @@ generatePlatform:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 26
+	li $a1, 20
 	syscall
+	addi $a0, $a0, 6
 	
 	# Multiply the platform by 4
 	li $t6, 4
@@ -324,14 +325,17 @@ shiftPlatforms:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 26
+	li $a1, 20
 	syscall
+	addi $a0, $a0, 6
 	
 	# Multiply the platform by 4
 	li $t6, 4
 	mult $a0, $t6
 	mflo $t6
 	add $t9, $gp, $t6
+	
+	addi $t9, $t9, 384 			# Shift the platform down to have it more "spaced"
 	
 	# Store the platform location
 	sw $t9, 20($s6)				# Store this platform as last one in the array
