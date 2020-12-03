@@ -73,7 +73,7 @@ main:
 	lw $t9, screenSize			# Screen size
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
-	li $s2, 57				# Score for the player
+	li $s2, 0				# Score for the player
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
 	
 ### Generate Platforms ##
@@ -92,9 +92,9 @@ generatePlatform:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 20
+	li $a1, 19
 	syscall
-	addi $a0, $a0, 6
+	addi $a0, $a0, 7
 	
 	# Multiply the platform by 4
 	li $t6, 4
@@ -153,9 +153,13 @@ drawPlatform:
 	
 	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
 	
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
 ### Draw score in top left corner ###
 drawFirstScoreInit:
-	#la $a0, numberZero			# Number to be drawn for the left score
 	lw $a1, scoreColour
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
 	
@@ -192,9 +196,11 @@ drawFirstPixelCol:
 	add $t6, $t3, $t5			# i + j
 	add $t6, $t6, $a0			# Get offset of A[i + j]
 	lw $t7, 0($t6)				# Get value from A[i + j]
+	
 	addi $t5, $t5, 12			# Increase the column skipping count
 	addi $t4, $t4, 128			# Jump to next row of the screen
 	beq $t7, 0, drawFirstPixelCol		# If the value was a 0, we DO NOT draw
+	
 	sw $a1, -128($t4)
 	bne $t5, 60, drawFirstPixelCol		# Haven't painted the whole column
 	
@@ -239,9 +245,11 @@ drawSecondPixelCol:
 	add $t6, $t3, $t5			# i + j
 	add $t6, $t6, $a0			# Get offset of A[i + j]
 	lw $t7, 0($t6)				# Get value from A[i + j]
+	
 	addi $t5, $t5, 12			# Increase the column skipping count
 	addi $t4, $t4, 128			# Jump to next row of the screen
 	beq $t7, 0, drawSecondPixelCol		# If the value was a 0, we DO NOT draw
+	
 	sw $a1, -128($t4)
 	bne $t5, 60, drawSecondPixelCol		# Haven't painted the whole column
 	
@@ -386,7 +394,6 @@ doodleOnPlatform:
 	
 	
 	# We only want to shift platforms IFF we are not on a platform at bottom of the screen
-	# TODO: AND the last platform isn't out of screen yet (or will be when shifting)
 	lw $t0, 0($s6)
 	
 	beq $t8, $t0, doodleJumpUp
@@ -407,7 +414,6 @@ doodleOnPlatform:
 	add $t9, $zero, $zero
 	addi $s2, $s2, 1			# Increment the player's score by 1 (for hitting a new platform)
 	j shiftPlatforms
-	#j doodleJumpUp
 		
 doodleNotOnPlatform:
 	jr $ra					# Continue back to point in the program
@@ -427,9 +433,9 @@ shiftPlatforms:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 26
+	li $a1, 19
 	syscall
-	#addi $a0, $a0, 6
+	addi $a0, $a0, 7
 	
 	# Multiply the platform by 4
 	li $t6, 4
