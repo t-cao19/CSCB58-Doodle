@@ -53,18 +53,18 @@
 	sleepDelay: .word 100
 	
 	# Pixels of Numbers 0-9
-	allNumbers: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	allNumbers: .word 
+	 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1,
+	 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1,
+	 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1,
+	 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1,
+	 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1,
+	 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1,
+	 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1,
+	 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+	 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
+	 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
 	
-	#numberZero: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
-	#numberOne: .word 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
-	#numberTwo: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1
-	#numberThree: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
-	#numberFour: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1
-	#numberFive: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
-	#numberSix: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1
-	#numberSeven: .word 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1
-	#numberEight: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1
-	#numberNine: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
 .text
 main:
 	lw $t1, platformColour			# $t1 stores the brown
@@ -73,8 +73,8 @@ main:
 	lw $t9, screenSize			# Screen size
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
-	li $s2, 25				# Score for the player
-	la $s4, allNumbers
+	li $s2, 57				# Score for the player
+	la $s4, allNumbers			# Address of the array of all the pixel numbers
 	
 ### Generate Platforms ##
 platformInit:
@@ -163,7 +163,6 @@ drawFirstScoreInit:
 	li $t1, 10
 	div $s2, $t1
 	mflo $a0
-	li $t1, 15
 	
 	# Multiply by 15 for the number
 	li $t1, 15
@@ -189,11 +188,12 @@ drawFirstPixelRow:
 	j drawSecondScoreInit
 	
 drawFirstPixelCol:
+	beq $t5, 60, done			# If we're done for that row
 	add $t6, $t3, $t5			# i + j
-	add $t6, $t6, $a0			
+	add $t6, $t6, $a0			# Get offset of A[i + j]
 	lw $t7, 0($t6)				# Get value from A[i + j]
-	addi $t5, $t5, 12
-	addi $t4, $t4, 128
+	addi $t5, $t5, 12			# Increase the column skipping count
+	addi $t4, $t4, 128			# Jump to next row of the screen
 	beq $t7, 0, drawFirstPixelCol		# If the value was a 0, we DO NOT draw
 	sw $a1, -128($t4)
 	bne $t5, 60, drawFirstPixelCol		# Haven't painted the whole column
@@ -201,7 +201,6 @@ drawFirstPixelCol:
 	jr $ra
 	
 drawSecondScoreInit:
-	#la $a0, numberZero			# Number to be drawn for the left score
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
 	
 	lw $a1, scoreColour
@@ -236,18 +235,18 @@ drawSecondPixelRow:
 	j initialKeyboardCheck
 	
 drawSecondPixelCol:
+	beq $t5, 60, done			# If all rows for this column has been painted
 	add $t6, $t3, $t5			# i + j
-	add $t6, $t6, $a0			
+	add $t6, $t6, $a0			# Get offset of A[i + j]
 	lw $t7, 0($t6)				# Get value from A[i + j]
-	addi $t5, $t5, 12
-	addi $t4, $t4, 128
+	addi $t5, $t5, 12			# Increase the column skipping count
+	addi $t4, $t4, 128			# Jump to next row of the screen
 	beq $t7, 0, drawSecondPixelCol		# If the value was a 0, we DO NOT draw
 	sw $a1, -128($t4)
 	bne $t5, 60, drawSecondPixelCol		# Haven't painted the whole column
 	
+done:
 	jr $ra
-
-	
 	
 ### Check for Keyboard Input ###
 initialKeyboardCheck:
@@ -406,7 +405,7 @@ doodleOnPlatform:
 	jal processMovement
 	
 	add $t9, $zero, $zero
-	addi $s2, $s2, 1			# Increment the player's score by 5 (for hitting a new platform)
+	addi $s2, $s2, 1			# Increment the player's score by 1 (for hitting a new platform)
 	j shiftPlatforms
 	#j doodleJumpUp
 		
