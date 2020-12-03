@@ -47,21 +47,22 @@
 	backgroundColour: .word 0xf5f5dc
 	platformColour: .word 0xdeb887
 	doodleColour: .word 0x556b2f
+	scoreColour: .word 0x228b22
 	
 	# Animation
 	sleepDelay: .word 100
 	
-	# Testing
-	testing: .asciiz "Goes in here "
- 	paintingScreen: .asciiz "Painting screen "
- 	paintingPlatforms: .asciiz "Painting platforms"
- 	paintingDoodle: .asciiz "Painting doodle"
- 	startShiftingPlatforms: .asciiz "Start shifting platforms"
- 	shiftingPlatforms: .asciiz "Currently shifting platforms"
- 	endShiftingPlatforms: .asciiz "Ending shifting platforms"
- 	onPlatforms: .asciiz "Currently on platforms"
- 	newline: .asciiz "\n"
-	
+	# Pixels of Numbers 0-9
+	numberZero: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
+	numberOne: .word 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
+	numberTwo: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1
+	numberThree: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	numberFour: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1
+	numberFive: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	numberSix: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1
+	numberSeven: .word 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1
+	numberEight: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1
+	numberNine: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
 .text
 main:
 	lw $t1, platformColour			# $t1 stores the brown
@@ -70,6 +71,7 @@ main:
 	lw $t9, screenSize			# Screen size
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
+	li $s2, 0				# Score for the player
 	
 ### Generate Platforms ##
 platformInit:
@@ -147,6 +149,35 @@ drawPlatform:
 	addi $t4, $t4, 4
 	
 	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
+	
+### Draw score in top left corner ###
+drawScoreInit:
+	la $a0, numberZero			# Number to be drawn for the left score
+	lw $a1, scoreColour
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+
+drawPixelRow:
+	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
+	add $t4, $gp, $t3			# Top row position
+	jal drawPixelCol
+	addi $t3, $t3, 4
+	
+	bne $t3, 12, drawPixelRow
+	
+	j initialKeyboardCheck
+	
+drawPixelCol:
+	add $t6, $t3, $t5			# i + j
+	add $t6, $t6, $a0			
+	lw $t7, 0($t6)				# Get value from A[i + j]
+	addi $t5, $t5, 12
+	addi $t4, $t4, 128
+	beq $t7, 0, drawPixelCol		# If the value was a 0, we DO NOT draw
+	sw $a1, -128($t4)
+	bne $t5, 60, drawPixelCol		# Haven't painted the whole column
+	
+	jr $ra
+	
 	
 ### Check for Keyboard Input ###
 initialKeyboardCheck:
@@ -286,7 +317,9 @@ doodleOnPlatform:
 	
 	
 	# We only want to shift platforms IFF we are not on a platform at bottom of the screen
+	# TODO: AND the last platform isn't out of screen yet (or will be when shifting)
 	lw $t0, 0($s6)
+	
 	beq $t8, $t0, doodleJumpUp
 	add $t0, $t0, 4
 	beq $t8, $t0, doodleJumpUp
@@ -303,15 +336,15 @@ doodleOnPlatform:
 	jal processMovement
 	
 	add $t9, $zero, $zero
-	
+	addi $s2, $s2, 1			# Increment the player's score by 5 (for hitting a new platform)
 	j shiftPlatforms
-	j doodleJumpUp
+	#j doodleJumpUp
 		
 doodleNotOnPlatform:
 	jr $ra					# Continue back to point in the program
 
 
-## Scroll the screen ###
+### Scroll the screen ###
 shiftPlatforms:
 		
 	add $t6, $s6, $t9			# Array offset/position
@@ -325,9 +358,9 @@ shiftPlatforms:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 20
+	li $a1, 26
 	syscall
-	addi $a0, $a0, 6
+	#addi $a0, $a0, 6
 	
 	# Multiply the platform by 4
 	li $t6, 4
@@ -335,14 +368,13 @@ shiftPlatforms:
 	mflo $t6
 	add $t9, $gp, $t6
 	
-	addi $t9, $t9, 384 			# Shift the platform down to have it more "spaced"
+	addi $t9, $t9, 768 			# Shift the platform down to have it more "spaced"
 	
 	# Store the platform location
 	sw $t9, 20($s6)				# Store this platform as last one in the array
-
-	
 	li $s3, 1
 	j backgroundInit
+		
 	
 Exit:
 	li $v0, 10 				# terminate the program gracefully
