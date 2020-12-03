@@ -53,16 +53,18 @@
 	sleepDelay: .word 100
 	
 	# Pixels of Numbers 0-9
-	numberZero: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
-	numberOne: .word 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
-	numberTwo: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1
-	numberThree: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
-	numberFour: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1
-	numberFive: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
-	numberSix: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1
-	numberSeven: .word 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1
-	numberEight: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1
-	numberNine: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	allNumbers: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	
+	#numberZero: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
+	#numberOne: .word 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
+	#numberTwo: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1
+	#numberThree: .word 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	#numberFour: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1
+	#numberFive: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	#numberSix: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1
+	#numberSeven: .word 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1
+	#numberEight: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1
+	#numberNine: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
 .text
 main:
 	lw $t1, platformColour			# $t1 stores the brown
@@ -71,7 +73,8 @@ main:
 	lw $t9, screenSize			# Screen size
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
-	li $s2, 0				# Score for the player
+	li $s2, 25				# Score for the player
+	la $s4, allNumbers
 	
 ### Generate Platforms ##
 platformInit:
@@ -151,32 +154,99 @@ drawPlatform:
 	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
 	
 ### Draw score in top left corner ###
-drawScoreInit:
-	la $a0, numberZero			# Number to be drawn for the left score
+drawFirstScoreInit:
+	#la $a0, numberZero			# Number to be drawn for the left score
 	lw $a1, scoreColour
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+	# Break score into 2 pieces
+	li $t1, 10
+	div $s2, $t1
+	mflo $a0
+	li $t1, 15
+	
+	# Multiply by 15 for the number
+	li $t1, 15
+	mult $a0, $t1
+	mflo $a0
+	
+	# Multiply by 4 as word-aligned
+	li $t1, 4
+	mult $a0, $t1
+	mflo $t1
+	
+	add $a0, $s4, $t1
+	
 
-drawPixelRow:
+drawFirstPixelRow:
 	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
 	add $t4, $gp, $t3			# Top row position
-	jal drawPixelCol
+	jal drawFirstPixelCol
 	addi $t3, $t3, 4
 	
-	bne $t3, 12, drawPixelRow
+	bne $t3, 12, drawFirstPixelRow
 	
-	j initialKeyboardCheck
+	j drawSecondScoreInit
 	
-drawPixelCol:
+drawFirstPixelCol:
 	add $t6, $t3, $t5			# i + j
 	add $t6, $t6, $a0			
 	lw $t7, 0($t6)				# Get value from A[i + j]
 	addi $t5, $t5, 12
 	addi $t4, $t4, 128
-	beq $t7, 0, drawPixelCol		# If the value was a 0, we DO NOT draw
+	beq $t7, 0, drawFirstPixelCol		# If the value was a 0, we DO NOT draw
 	sw $a1, -128($t4)
-	bne $t5, 60, drawPixelCol		# Haven't painted the whole column
+	bne $t5, 60, drawFirstPixelCol		# Haven't painted the whole column
 	
 	jr $ra
+	
+drawSecondScoreInit:
+	#la $a0, numberZero			# Number to be drawn for the left score
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+	lw $a1, scoreColour
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+	# Break score into 2 pieces
+	li $t1, 10
+	div $s2, $t1
+	mfhi $a0
+	
+	# Multiply by 15 for the number
+	li $t1, 15
+	mult $a0, $t1
+	mflo $a0
+	
+	# Multiply by 4 as word-aligned
+	li $t1, 4
+	mult $a0, $t1
+	mflo $t1
+	
+	add $a0, $s4, $t1
+
+drawSecondPixelRow:
+	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
+	add $t4, $gp, $t3			# Top row position
+	addi $t4, $t4, 16 			# As second column
+	jal drawSecondPixelCol
+	addi $t3, $t3, 4
+	
+	bne $t3, 12, drawSecondPixelRow
+	
+	j initialKeyboardCheck
+	
+drawSecondPixelCol:
+	add $t6, $t3, $t5			# i + j
+	add $t6, $t6, $a0			
+	lw $t7, 0($t6)				# Get value from A[i + j]
+	addi $t5, $t5, 12
+	addi $t4, $t4, 128
+	beq $t7, 0, drawSecondPixelCol		# If the value was a 0, we DO NOT draw
+	sw $a1, -128($t4)
+	bne $t5, 60, drawSecondPixelCol		# Haven't painted the whole column
+	
+	jr $ra
+
 	
 	
 ### Check for Keyboard Input ###
