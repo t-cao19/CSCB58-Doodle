@@ -92,7 +92,7 @@ generatePlatform:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 19
+	li $a1, 21
 	syscall
 	addi $a0, $a0, 7
 	
@@ -326,19 +326,19 @@ keyboardInput:
 	j initialKeyboardCheck			# The key entered wasn't valid, check for valid
 	
 leftInput:
-	addi $s7, $s7, -4			# Move doodle location exactly 1 pixel left
+	addi $s7, $s7, -8			# Move doodle location exactly 1 pixel left
 	add $t7, $gp, $s7			# pixel of spot to the left
 	lw $t2, backgroundColour		# $t2 stores the beige colour
-	sw $t2, 4($t7)				# Colour previous doodle spot with background colour
+	sw $t2, 8($t7)				# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
 	
 rightInput:
-	addi $s7, $s7, 4			# Move doodle location exactly 1 pixel right
+	addi $s7, $s7, 8			# Move doodle location exactly 1 pixel right
 	add $t7, $gp, $s7			# pixel of spot to the right
 	lw $t2, backgroundColour		# $t2 stores the beige colour
-	sw $t2, -4($t7)				# Colour previous doodle spot with background colour
-		
+	sw $t2, -8($t7)				# Colour previous doodle spot with background colour
+	
 	j processMovement			# Colour in the new spot
 
 
@@ -363,6 +363,7 @@ retrievePlatform:
 	add $t5, $s6, $t4			# Array Position
 	lw $t8, 0($t5)				# Load platform coordinate from array
 	addi $s0, $t8, 24			# 6 pixels down from platform
+	
 	
 checkDoodleOnPlatform:
 	add $t9, $gp, $s7			# Address of doodle
@@ -433,7 +434,7 @@ shiftPlatforms:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 19
+	li $a1, 21
 	syscall
 	addi $a0, $a0, 7
 	
