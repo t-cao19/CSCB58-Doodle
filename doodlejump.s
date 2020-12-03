@@ -288,7 +288,7 @@ doodleJumpUp:
 	
 	jal checkPlatformInit			# Check if the doodle has reached any of the platforms before jumping again	
 	
-	bne $t6, 10, doodleJumpUp
+	bne $t6, 8, doodleJumpUp
 	
 doodleJumpDown:	
 	addi $s7, $s7, 128			# Move doodle location exactly 1 row up
@@ -444,7 +444,9 @@ shiftPlatforms:
 	mflo $t6
 	add $t9, $gp, $t6
 	
-	addi $t9, $t9, 768 			# Shift the platform down to have it more "spaced"
+	addi $t9, $t9, 896 			# Shift the platform down to have it more "s
+	
+	#addi $t9, $t9, 768 			# Shift the platform down to have it more "spaced"
 	
 	# Store the platform location
 	sw $t9, 20($s6)				# Store this platform as last one in the array
