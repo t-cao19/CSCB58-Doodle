@@ -48,7 +48,7 @@
 	platformColour: .word 0xdeb887
 	doodleColour: .word 0x556b2f
 	scoreColour: .word 0x228b22
-	wordColour: .word 0x000000
+	wordColour: .word 0x3090c7
 	
 	# Animation
 	sleepDelay: .word 100
@@ -460,8 +460,14 @@ shiftPlatforms:
 	
 ### Draw goodbye screen ###
 drawGoodbye:
-	la $a0, letterG
-	#addi $t4, $gp, 1056			# Position to draw the character at
+	la $a0, letterB
+	li $a2, 1708
+	jal drawCharInit
+	la $a0, letterY
+	li $a2, 1724
+	jal drawCharInit
+	la $a0, letterE
+	li $a2, 1740
 	jal drawCharInit
 	
 	j checkRestartInit
@@ -485,7 +491,7 @@ drawCharInit:
 	
 drawCharRow:
 	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
-	addi $t4, $gp, 1056			# Position to draw the character at
+	add $t4, $gp, $a2			# Position to draw the character at
 	add $t4, $t4, $t3			# Top row position
 	jal drawCharCol
 	addi $t3, $t3, 4
