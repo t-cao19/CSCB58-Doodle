@@ -48,6 +48,7 @@
 	platformColour: .word 0xdeb887
 	doodleColour: .word 0x556b2f
 	scoreColour: .word 0x228b22
+	wordColour: .word 0x000000
 	
 	# Animation
 	sleepDelay: .word 100
@@ -64,6 +65,15 @@
 	 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
 	 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
 	 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	 
+	 # Pixels for letters
+	 letterB: .word 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1
+	 letterD: .word 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0
+	 letterE: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1
+	 letterG: .word 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1
+	 letterO: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0 ,1, 1, 1, 1
+	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
+	 
 	
 .text
 main:
@@ -81,7 +91,7 @@ platformInit:
 	lw $t0, displayAddress
 	li $s0, 3456				# Offset for platforms
 	
-baseDoodlePlatform:
+baseDoodlePlatform:				# Initial platform for the doodle to stand on
 	addi $t7, $gp, 4020
 	sw $t7, 0($s6)
 	addi $t3, $zero, 4			# Counter/Offset for the array - Set to 4 as need base platform
@@ -89,7 +99,7 @@ baseDoodlePlatform:
 generatePlatform:
 	add $t5, $s6, $t3 			# Current array location
 
-	# Generate a random platform coordinate
+	# Generate a random platform coordinate with range 7-28 on the screen
 	li $v0, 42
 	li $a0, 0
 	li $a1, 21
@@ -122,8 +132,8 @@ backgroundInit:
 	lw $t9, screenSize			# Screen size
 
 backgroundLoop:
-	sw $t2, 0($t0)
-	add $t0, $t0, 4				 # Move along the screen
+	sw $t2, 0($t0)				# Paint the pixel
+	add $t0, $t0, 4				# Move along the screen
 	addi $t3, $t3, 1
 	bne $t3, $t9, backgroundLoop
 	
@@ -140,7 +150,7 @@ drawPlatformInit:
 	lw $a0, platformWidth			# Width of each platform
 	lw $t1, platformColour
 		
-drawPlatform:	
+drawPlatform:					# Loop through to paint the platforms
 	add $t5, $s6, $t4
 	lw $t7, 0($t5)
 	sw $t1, 0($t7)
@@ -180,16 +190,15 @@ drawFirstScoreInit:
 	
 	add $a0, $s4, $t1
 	
-
 drawFirstPixelRow:
 	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
 	add $t4, $gp, $t3			# Top row position
 	jal drawFirstPixelCol
 	addi $t3, $t3, 4
 	
-	bne $t3, 12, drawFirstPixelRow
+	bne $t3, 12, drawFirstPixelRow		# Not done drawing the number for the first score
 	
-	j drawSecondScoreInit
+	j drawSecondScoreInit			# Done and now paint the second digit of the score
 	
 drawFirstPixelCol:
 	beq $t5, 60, done			# If we're done for that row
@@ -264,7 +273,7 @@ initialKeyboardCheck:
 	
 startGame:
 	lw $t5, 0xffff0004 
-	bne $t5, 0x73, initialKeyboardCheck
+	bne $t5, 0x73, initialKeyboardCheck	# the "s" key
 	
 doodleJumpInit:
 	li $t6, 0
@@ -309,7 +318,7 @@ doodleJumpDown:
 	jal checkPlatformInit			# Check if the doodle landed on any of the platforms
 	
 	addi $t5, $s7, -4068
-	bgez $t5, main				# Fell off screen, completely restart the game
+	bgez $t5, drawGoodbye			# Fell off screen, paint goodbye
 	
 	bne $t6, 10, doodleJumpDown
 	
@@ -321,8 +330,8 @@ keyboardCheck:
 	
 keyboardInput:
 	lw $t5, 0xffff0004 
-	beq $t5, 0x6A, leftInput
-	beq $t5, 0x6B, rightInput
+	beq $t5, 0x6A, leftInput		# the "j" key
+	beq $t5, 0x6B, rightInput		# the "k" key
 	j initialKeyboardCheck			# The key entered wasn't valid, check for valid
 	
 leftInput:
@@ -357,6 +366,7 @@ checkPlatformInit:
 	jal retrievePlatform
 	
 	lw $ra, 0($sp)
+	addi $sp, $sp, 4			# Shrink the stack back
 	jr $ra
 	
 retrievePlatform:
@@ -384,9 +394,6 @@ doodleOnPlatform:
 	sw $t0, 0($t9)				# Store platform colour where doodle hit platform	
 	
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
-	
-	lw $ra, 0($sp)				# Load back the return address
-	addi $sp, $sp, 4			# Shrink the stack back
 
 	lw $t3, backgroundColour		# Replace previous pixels with background colour
 	
@@ -444,15 +451,65 @@ shiftPlatforms:
 	mflo $t6
 	add $t9, $gp, $t6
 	
-	addi $t9, $t9, 896 			# Shift the platform down to have it more "s
-	
-	#addi $t9, $t9, 768 			# Shift the platform down to have it more "spaced"
-	
+	addi $t9, $t9, 896 			# Shift the platform down to have it more "spaced"
+		
 	# Store the platform location
 	sw $t9, 20($s6)				# Store this platform as last one in the array
+	li $s3, 1				# Means not restarting
+	j backgroundInit			# Go repaint the whole entire screen
+	
+### Draw goodbye screen ###
+drawGoodbye:
+	la $a0, letterG
+	#addi $t4, $gp, 1056			# Position to draw the character at
+	jal drawCharInit
+	
+	j checkRestartInit
+	
+checkRestartInit:
+	lw $t5, 0xffff0000 			# Check for keyboard input
+	beq $t5, 1, checkRestart
+	
+checkRestart:
+	lw $t5, 0xffff0004 
+	bne $t5, 0x73, checkRestartInit		# the "s" key
 	li $s3, 1
-	j backgroundInit
-		
+	j main
+			
+drawCharInit:
+	addi $sp, $sp, -4			# Increase stack size
+	sw $ra, 0($sp)				# Store the return address
+
+	lw $a1, wordColour
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+drawCharRow:
+	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
+	addi $t4, $gp, 1056			# Position to draw the character at
+	add $t4, $t4, $t3			# Top row position
+	jal drawCharCol
+	addi $t3, $t3, 4
+	
+	bne $t3, 12, drawCharRow		# Not done drawing the character
+	
+	lw $ra, 0($sp)				# Grab return address from the stack
+	addi $sp, $sp, 4			# Shrink back the stack
+	jr $ra
+	
+drawCharCol:
+	beq $t5, 60, done			# If we're done for that row
+	add $t6, $t3, $t5			# i + j
+	add $t6, $t6, $a0			# Get offset of A[i + j]
+	lw $t7, 0($t6)				# Get value from A[i + j]
+	
+	addi $t5, $t5, 12			# Increase the column skipping count
+	addi $t4, $t4, 128			# Jump to next row of the screen
+	beq $t7, 0, drawCharCol			# If the value was a 0, we DO NOT draw
+	
+	sw $a1, -128($t4)
+	bne $t5, 60, drawCharCol		# Haven't painted the whole column
+	
+	jr $ra
 	
 Exit:
 	li $v0, 10 				# terminate the program gracefully
