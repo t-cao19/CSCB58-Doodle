@@ -74,10 +74,15 @@
 	 letterG: .word 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1
 	 letterH: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1
 	 letterI: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
+	 letterJ: .word 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1
+	 letterL: .word 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1
+	 letterM: .word 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1
 	 letterO: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0 ,1, 1, 1, 1
+	 letterP: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0
 	 letterR: .word 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1
 	 letterS: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
 	 letterT: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0
+	 letterU: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
 	 letterW: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1
 	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
 	 exclaimMark: .word 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0
@@ -93,6 +98,67 @@ main:
 	li $s3, 0				# Restart or not
 	li $s2, 0				# Score for the player
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
+	
+### Start Screen ###
+drawStartInit:
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+  
+	li $t3, 0 				# Counter for filling in background
+	lw $t0, displayAddress
+	lw $t2, backgroundColour		# $t2 stores the beige colour
+	lw $t9, screenSize			# Screen size
+
+drawStartBackground:
+	sw $t2, 0($t0)				# Paint the pixel
+	add $t0, $t0, 4				# Move along the screen
+	addi $t3, $t3, 1
+	bne $t3, $t9, drawStartBackground
+
+drawStartText:
+	# Draw the word "Doodle"
+	la $a0, letterD
+	li $a2, 784
+	jal drawCharInit
+	la $a0, letterO
+	li $a2, 800
+	jal drawCharInit
+	la $a0, letterO
+	li $a2, 816
+	jal drawCharInit 
+	la $a0, letterD
+	li $a2, 832
+	jal drawCharInit
+	la $a0, letterL
+	li $a2, 848
+	jal drawCharInit
+	la $a0, letterE
+	li $a2, 864
+	jal drawCharInit
+	
+	# Draw the word "jump"
+	la $a0, letterJ
+	li $a2, 1568
+	jal drawCharInit
+	la $a0, letterU
+	li $a2, 1584
+	jal drawCharInit
+	la $a0, letterM
+	li $a2, 1600
+	jal drawCharInit 
+	la $a0, letterP
+	li $a2, 1616
+	jal drawCharInit
+	
+initialKeyboardCheck:
+	lw $t5, 0xffff0000 
+	beq $s3, 1, doodleJumpInit
+	
+startGame:
+	lw $t5, 0xffff0004 
+	bne $t5, 0x73, initialKeyboardCheck	# the "s" key
 	
 ### Generate Platforms ##
 platformInit:
@@ -255,7 +321,8 @@ drawSecondPixelRow:
 	
 	bne $t3, 12, drawSecondPixelRow
 	
-	j initialKeyboardCheck
+	#j initialKeyboardCheck
+	j doodleJumpInit
 	
 drawSecondPixelCol:
 	beq $t5, 60, done			# If all rows for this column has been painted
@@ -274,14 +341,14 @@ done:
 	jr $ra
 	
 ### Check for Keyboard Input ###
-initialKeyboardCheck:
-	lw $t5, 0xffff0000 
-	beq $t5, 1, startGame
-	beq $s3, 1, doodleJumpInit
+#initialKeyboardCheck:
+#	lw $t5, 0xffff0000 
+#	beq $t5, 1, startGame
+#	beq $s3, 1, doodleJumpInit
 	
-startGame:
-	lw $t5, 0xffff0004 
-	bne $t5, 0x73, initialKeyboardCheck	# the "s" key
+#startGame:
+#	lw $t5, 0xffff0004 
+#	bne $t5, 0x73, initialKeyboardCheck	# the "s" key
 	
 doodleJumpInit:
 	li $t6, 0
