@@ -67,6 +67,7 @@
 	 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1
 	 
 	 # Pixels for letters
+	 letterA: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1
 	 letterB: .word 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1
 	 letterD: .word 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0
 	 letterE: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1
@@ -74,7 +75,9 @@
 	 letterH: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1
 	 letterI: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
 	 letterO: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0 ,1, 1, 1, 1
+	 letterR: .word 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1
 	 letterS: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	 letterT: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0
 	 letterW: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1
 	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
 	 exclaimMark: .word 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0
@@ -427,8 +430,8 @@ doodleOnPlatform:
 	add $t9, $zero, $zero
 	addi $s2, $s2, 1			# Increment the player's score by 1 (for hitting a new platform)
 	
-	j drawWow				
-	j shiftPlatforms
+	j drawMessage				
+	#j shiftPlatforms
 		
 doodleNotOnPlatform:
 	jr $ra					# Continue back to point in the program
@@ -493,16 +496,27 @@ checkRestart:
 	j main
 	
 ### Draw On-Screen Notifications ###
-drawWow:
-	beq $s2, 0, shiftPlatforms		# 0 does not count as wow
+drawMessage:
+	beq $s2, 0, shiftPlatforms 		# 0 does not count as wow! or great!
+	
+	# Check if the current score is a multiple of 5
+	li $t5, 10
+	div $s2, $t5
+	mfhi $t0
+	
+	beq $t0, 0, drawGreat			# We have a multiple of 10
 	
 	# Check if the current score is a multiple of 5
 	li $t5, 5
 	div $s2, $t5
 	mfhi $t0
 	
-	bne $t0, 0, shiftPlatforms		# If score is not a multiple of 5, we do not print wow so back to shifting
+	beq $t0, 0, drawWow 			# We have a multiple of 5
+	
+	j shiftPlatforms			# None of the above, so we just shift platforms
+	
 
+drawWow:
 	la $a0, letterW
 	li $a2, 36
 	jal drawCharInit
@@ -514,6 +528,33 @@ drawWow:
 	jal drawCharInit 
 	la $a0, exclaimMark
 	li $a2, 84
+	jal drawCharInit
+	
+	# Sleep to delay animation
+	li $v0, 32		
+	li $a0, 300
+	syscall
+	
+	j shiftPlatforms			# Jump back to shifting platform
+	
+drawGreat:
+	la $a0, letterG
+	li $a2, 36
+	jal drawCharInit
+	la $a0, letterR
+	li $a2, 52
+	jal drawCharInit
+	la $a0, letterE
+	li $a2, 68
+	jal drawCharInit 
+	la $a0, letterA
+	li $a2, 84
+	jal drawCharInit
+	la $a0, letterT
+	li $a2, 100
+	jal drawCharInit
+	la $a0, exclaimMark
+	li $a2, 112
 	jal drawCharInit
 	
 	# Sleep to delay animation
