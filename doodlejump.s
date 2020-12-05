@@ -71,8 +71,13 @@
 	 letterD: .word 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0
 	 letterE: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1
 	 letterG: .word 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1
+	 letterH: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1
+	 letterI: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1
 	 letterO: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0 ,1, 1, 1, 1
+	 letterS: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
+	 letterW: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1
 	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
+	 exclaimMark: .word 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0
 	 
 	
 .text
@@ -421,6 +426,8 @@ doodleOnPlatform:
 	
 	add $t9, $zero, $zero
 	addi $s2, $s2, 1			# Increment the player's score by 1 (for hitting a new platform)
+	
+	j drawWow				
 	j shiftPlatforms
 		
 doodleNotOnPlatform:
@@ -461,13 +468,16 @@ shiftPlatforms:
 ### Draw goodbye screen ###
 drawGoodbye:
 	la $a0, letterB
-	li $a2, 1708
+	li $a2, 1700
 	jal drawCharInit
 	la $a0, letterY
-	li $a2, 1724
+	li $a2, 1716
 	jal drawCharInit
 	la $a0, letterE
-	li $a2, 1740
+	li $a2, 1732
+	jal drawCharInit
+	la $a0, exclaimMark
+	li $a2, 1744
 	jal drawCharInit
 	
 	j checkRestartInit
@@ -481,7 +491,40 @@ checkRestart:
 	bne $t5, 0x73, checkRestartInit		# the "s" key
 	li $s3, 1
 	j main
-			
+	
+### Draw On-Screen Notifications ###
+drawWow:
+	beq $s2, 0, shiftPlatforms		# 0 does not count as wow
+	
+	# Check if the current score is a multiple of 5
+	li $t5, 5
+	div $s2, $t5
+	mfhi $t0
+	
+	bne $t0, 0, shiftPlatforms		# If score is not a multiple of 5, we do not print wow so back to shifting
+
+	la $a0, letterW
+	li $a2, 36
+	jal drawCharInit
+	la $a0, letterO
+	li $a2, 52
+	jal drawCharInit
+	la $a0, letterW
+	li $a2, 68
+	jal drawCharInit 
+	la $a0, exclaimMark
+	li $a2, 84
+	jal drawCharInit
+	
+	# Sleep to delay animation
+	li $v0, 32		
+	li $a0, 300
+	syscall
+	
+	j shiftPlatforms			# Jump back to shifting platform
+	
+		
+### Draw a character in general ###		
 drawCharInit:
 	addi $sp, $sp, -4			# Increase stack size
 	sw $ra, 0($sp)				# Store the return address
