@@ -104,7 +104,6 @@
 main:
 	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
-	#lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
 	li $s2, 0				# Score for the player
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
@@ -267,6 +266,7 @@ platformInit:
 	lw $t0, displayAddress
 	li $s0, 3456				# Offset for platforms
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
+	li $s1, 8				# How much the doodle can jump up/down by
 	
 baseDoodlePlatform:				# Initial platform for the doodle to stand on
 	addi $t7, $gp, 4020
@@ -460,8 +460,8 @@ doodleJumpInit:
 doodleJumpUp:	
 	addi $s7, $s7, -128			# Move doodle location exactly 1 row up
 	add $t7, $gp, $s7			# pixel of the row one up
-	#sw $t3, 128($t7)			# Colour previous doodle spot with background colour
 	
+	lw $t3, backgroundColour
 	sw $t3, 124($t7)			# Colour previous doodle spot with background colour
 	sw $t3, 132($t7)			# Colour previous doodle spot with background colour
 	sw $t3, 0($t7)				# Colour previous doodle spot with background colour
@@ -479,12 +479,13 @@ doodleJumpUp:
 	
 	jal checkPlatformInit			# Check if the doodle has reached any of the platforms before jumping again	
 	
-	bne $t6, 6, doodleJumpUp
+	bne $t6, $s1, doodleJumpUp
 	
 doodleJumpDown:	
 	addi $s7, $s7, 128			# Move doodle location exactly 1 row up
 	add $t7, $gp, $s7			# pixel of the row one up
 	
+	lw $t3, backgroundColour
 	sw $t3, -260($t7)			# Colour previous doodle spot with background colour
 	sw $t3, -252($t7)			# Colour previous doodle spot with background colour
 	sw $t3, -384($t7)			# Colour previous doodle spot with background colour
@@ -545,14 +546,12 @@ rightInput:
 
 
 processMovement:
-	#lw $t3, 0($t7)				# save colour at the new location
-	#sw $a3, 0($t7)				# load doodle colour at new location
-	
 	lw $t2, doodleColour
 	lw $t1, oliveGreen
 	
 	# Draw the doodle
 	add $t5, $gp, $s7
+	add $t3, $zero, $s1
 	
 	sw $t2, 4($t5)
 	sw $t2, -4($t5)
@@ -714,9 +713,9 @@ shiftPlatforms:
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
-	li $a1, 21
+	li $a1, 10
 	syscall
-	addi $a0, $a0, 7
+	addi $a0, $a0, 10
 	
 	# Multiply the platform by 4
 	li $t6, 4
@@ -725,10 +724,8 @@ shiftPlatforms:
 	#add $t9, $gp, $t6
 	
 	lw $t9, 16($s6)
-	addi $t9, $t9, -640
+	addi $t9, $t9, -512
 	add $t6, $t6, $t9
-	
-	#addi $t9, $t9, 384			# Shift the platform down to have it more "spaced"
 		
 	# Store the platform location
 	sw $t6, 20($s6)				# Store this platform as last one in the array
@@ -996,7 +993,14 @@ drawWow:
 	li $a0, 300
 	syscall
 	
+	beq $s1, 2, noDecrease			# Don't want to allow - amount of jumping
+	
+	addi $s1, $s1, -2
+	
 	j shiftPlatforms			# Jump back to shifting platform
+
+noDecrease:
+	j shiftPlatforms
 	
 drawGreat:
 	la $a0, letterG
