@@ -18,8 +18,8 @@
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
-# 1. (fill in the feature, if any)
-# 2. (fill in the feature, if any)
+# 1. Fancier Graphics
+# 2. (Dynamic on-screen notifications
 # 3. (fill in the feature, if any)
 # ... (add more if necessary)
 #
@@ -27,7 +27,8 @@
 # - (insert YouTube / MyMedia / other URL here). 
 #
 # Any additional information that the TA needs to know:
-# - (write here, if any)
+# - The random platform generation might require some luck, despite 
+#   the fact I tried to make the platforms as "uniform" as possible
 #
 #####################################################################
 
@@ -75,6 +76,7 @@
 	 # Pixels for letters
 	 letterA: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1
 	 letterB: .word 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1
+	 letterC: .word 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1
 	 letterD: .word 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0
 	 letterE: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1
 	 letterG: .word 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1
@@ -93,6 +95,7 @@
 	 letterW: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1
 	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
 	 exclaimMark: .word 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0
+	 colonMark: .word 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
 	 
 .text
 main:
@@ -497,7 +500,7 @@ doodleJumpDown:
 	jal checkPlatformInit			# Check if the doodle landed on any of the platforms
 	
 	addi $t5, $s7, -4068
-	bgez $t5, drawGameOver			# Fell off screen, paint goodbye
+	bgez $t5, drawEndInit			# Fell off screen, paint goodbye
 	
 	bne $t6, 10, doodleJumpDown
 	
@@ -583,12 +586,12 @@ checkDoodleOnPlatform:
 	beq $t5, $t8, doodleLeftLeg		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	addi $t5, $t9, 4	
 	beq $t5, $t8, doodleRightLeg		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	addi $t5, $t9, -132
-	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	addi $t5, $t9, -128
-	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	addi $t5, $t9, -124
-	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	#addi $t5, $t9, -132
+	#beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	#addi $t5, $t9, -128
+	#beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	#addi $t5, $t9, -124
+	#beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	addi $t5, $t9, -256			# "Head" of the doodle
 	beq $t5, $t8, doodleTop			# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	
@@ -725,42 +728,214 @@ shiftPlatforms:
 	li $s3, 1				# Means not restarting
 	j backgroundInit			# Go repaint the whole entire screen
 	
+	
+### Start Screen ###
+drawEndInit:
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+  
+	li $t3, 0 				# Counter for filling in background
+	lw $t0, displayAddress
+	lw $t2, goldenRod			
+	lw $t9, screenSize			# Screen size
+
+drawEndBackground:
+	sw $t2, 0($t0)				# Paint the pixel
+	add $t0, $t0, 4				# Move along the screen
+	addi $t3, $t3, 1
+	bne $t3, $t9, drawEndBackground
+		
 ### Draw goodbye screen ###
 drawGameOver:
 	lw $a1, wordColour
 	
 	# Draw the word "game"
 	la $a0, letterG
-	li $a2, 1184
+	li $a2, 160
 	jal drawCharInit
 	la $a0, letterA
-	li $a2, 1200
+	li $a2, 176
 	jal drawCharInit
 	la $a0, letterM
-	li $a2, 1216
+	li $a2, 192
 	jal drawCharInit 
 	la $a0, letterE
-	li $a2, 1232
+	li $a2, 208
 	jal drawCharInit
 	
 	# Draw the word "over!"
 	la $a0, letterO
-	li $a2, 1952
+	li $a2, 928
 	jal drawCharInit
 	la $a0, letterV
-	li $a2, 1968
+	li $a2, 944
 	jal drawCharInit
 	la $a0, letterE
-	li $a2, 1984
+	li $a2, 960
 	jal drawCharInit 
 	la $a0, letterR
-	li $a2, 2000
+	li $a2, 976
 	jal drawCharInit
 	la $a0, exclaimMark
-	li $a2, 2012
+	li $a2, 992
 	jal drawCharInit
 	
+	
+	lw $a1, darkBrown
+	# Draw the word "Score:"
+	la $a0, letterS
+	li $a2, 1796
+	jal drawCharInit
+	la $a0, letterC
+	li $a2, 1812
+	jal drawCharInit
+	la $a0, letterO
+	li $a2, 1828
+	jal drawCharInit
+	la $a0, letterR
+	li $a2, 1844
+	jal drawCharInit
+	la $a0, letterE
+	li $a2, 1860
+	jal drawCharInit
+	la $a0, colonMark
+	li $a2, 1872
+	jal drawCharInit
+	
+	lw $a1, oliveGreen
+	# Draw the word "S to"
+	la $a0, letterS
+	li $a2, 2564
+	jal drawCharInit
+	la $a0, letterT
+	li $a2, 2580
+	jal drawCharInit
+	la $a0, letterO
+	li $a2, 2596
+	jal drawCharInit
+	
+	# Draw the word "restart"
+	la $a0, letterR
+	li $a2, 3332
+	jal drawCharInit
+	la $a0, letterE
+	li $a2, 3348
+	jal drawCharInit
+	la $a0, letterS
+	li $a2, 3364
+	jal drawCharInit
+	la $a0, letterT
+	li $a2, 3380
+	jal drawCharInit
+	la $a0, letterA
+	li $a2, 3396
+	jal drawCharInit
+	la $a0, letterR
+	li $a2, 3412
+	jal drawCharInit
+	la $a0, letterT
+	li $a2, 3428
+	jal drawCharInit
+	
+	
+### Draw score in top left corner ###
+drawFirstEndScoreInit:
+	lw $a1, scoreColour
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+	# Break score into 2 pieces
+	li $t1, 10
+	div $s2, $t1
+	mflo $a0
+	
+	# Multiply by 15 for the number
+	li $t1, 15
+	mult $a0, $t1
+	mflo $a0
+	
+	# Multiply by 4 as word-aligned
+	li $t1, 4
+	mult $a0, $t1
+	mflo $t1
+	
+	add $a0, $s4, $t1
+	
+drawFirstEndScoreRow:
+	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
+	add $t4, $gp, $t3			# Top row position
+	addi $t4, $t4, 1884			# As second column
+	jal drawFirstEndScoreCol
+	addi $t3, $t3, 4
+	
+	bne $t3, 12, drawFirstEndScoreRow		# Not done drawing the number for the first score
+	
+	j drawSecondScoreEndInit			# Done and now paint the second digit of the score
+	
+drawFirstEndScoreCol:
+	beq $t5, 60, done			# If we're done for that row
+	add $t6, $t3, $t5			# i + j
+	add $t6, $t6, $a0			# Get offset of A[i + j]
+	lw $t7, 0($t6)				# Get value from A[i + j]
+	
+	addi $t5, $t5, 12			# Increase the column skipping count
+	addi $t4, $t4, 128			# Jump to next row of the screen
+	beq $t7, 0, drawFirstEndScoreCol	# If the value was a 0, we DO NOT draw
+	
+	sw $a1, -128($t4)
+	bne $t5, 60, drawFirstEndScoreCol	# Haven't painted the whole column
+	
+	jr $ra
+	
+drawSecondScoreEndInit:
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+	lw $a1, scoreColour
+	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
+	
+	# Break score into 2 pieces
+	li $t1, 10
+	div $s2, $t1
+	mfhi $a0
+	
+	# Multiply by 15 for the number
+	li $t1, 15
+	mult $a0, $t1
+	mflo $a0
+	
+	# Multiply by 4 as word-aligned
+	li $t1, 4
+	mult $a0, $t1
+	mflo $t1
+	
+	add $a0, $s4, $t1
+
+drawSecondEndScoreRow:
+	addi $t5, $zero, 0			# Counter for going through all 5 rows (i.e. j)
+	add $t4, $gp, $t3			# Top row position
+	addi $t4, $t4, 1900			# As second column
+	jal drawSecondEndScoreCol
+	addi $t3, $t3, 4
+	
+	bne $t3, 12, drawSecondEndScoreRow
+	
 	j checkRestartInit
+	
+drawSecondEndScoreCol:
+	beq $t5, 60, done			# If all rows for this column has been painted
+	add $t6, $t3, $t5			# i + j
+	add $t6, $t6, $a0			# Get offset of A[i + j]
+	lw $t7, 0($t6)				# Get value from A[i + j]
+	
+	addi $t5, $t5, 12			# Increase the column skipping count
+	addi $t4, $t4, 128			# Jump to next row of the screen
+	beq $t7, 0, drawSecondEndScoreCol		# If the value was a 0, we DO NOT draw
+	
+	sw $a1, -128($t4)
+	bne $t5, 60, drawSecondEndScoreCol		# Haven't painted the whole column
+	
+	jr $ra
 	
 checkRestartInit:
 	lw $t5, 0xffff0000 			# Check for keyboard input
@@ -770,7 +945,7 @@ checkRestart:
 	lw $t5, 0xffff0004 
 	bne $t5, 0x73, checkRestartInit		# the "s" key
 	li $s3, 1
-	j main
+	j platformInit
 	
 ### Draw On-Screen Notifications ###
 drawMessage:
