@@ -105,7 +105,6 @@ main:
 	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
 	li $s3, 0				# Restart or not
-	li $s2, 0				# Score for the player
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
 	lw $a3, platformWidth			# Platform width
 	lw $v1, sleepDelay
@@ -269,6 +268,7 @@ platformInit:
 	li $s0, 3456				# Offset for platforms
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s1, 8				# How much the doodle can jump up/down by
+	li $s2, 0				# Score for the player
 	
 baseDoodlePlatform:				# Initial platform for the doodle to stand on
 	addi $t7, $gp, 4020
