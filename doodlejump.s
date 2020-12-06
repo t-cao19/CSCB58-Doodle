@@ -199,8 +199,10 @@ drawBouncingDoodleInit:
 bounceStaticDoodleUp:
 	addi $s1, $s1, -128			# Move doodle location exactly 1 row up
 	add $t7, $gp, $s1			# pixel of the row one up
-	sw $t3, 128($t7)			# Colour previous doodle spot with background colour
-	sw $t3, -124($t7)
+	
+	sw $t3, 124($t7)			# Colour previous doodle spot with background colour
+	sw $t3, 132($t7)			# Colour previous doodle spot with background colour
+	sw $t3, 0($t7)				# Colour previous doodle spot with background colour
 	
 	jal drawBouncingDoodle
 	
@@ -218,8 +220,9 @@ bounceStaticDoodleUp:
 bounceStaticDoodleDown:
 	addi $s1, $s1, 128			# Move doodle location exactly 1 row up
 	add $t7, $gp, $s1			# pixel of the row one up
-	sw $t3, -512($t7)			# Colour previous doodle spot with background colour
-	sw $t3, -380($t7)
+	sw $t3, -260($t7)			# Colour previous doodle spot with background colour
+	sw $t3, -252($t7)
+	sw $t3, -384($t7)
 	
 	jal drawBouncingDoodle
 	
@@ -305,9 +308,20 @@ backgroundLoop:
 	
 ### Draw Doodle ###
 doodledraw:
+	lw $t0, oliveGreen
 	lw $a3, doodleColour			# $a3 stores colour of doodle
+	#add $t5, $gp, $s7
+	#sw $a3, 0($t5)				# Draw the doodle
+	
+	# Draw the doodle
 	add $t5, $gp, $s7
-	sw $a3, 0($t5)				# Draw the doodle
+	
+	sw $t2, 4($t5)
+	sw $t2, -4($t5)
+	sw $t1, -128($t5)
+	sw $t1, -124($t5)
+	sw $t1, -132($t5)
+	sw $t2, -256($t5)
 	
 ### Draw the Platforms ###	
 drawPlatformInit:
@@ -434,12 +448,16 @@ done:
 	
 doodleJumpInit:
 	li $t6, 0
-	move $t3, $t2				# Initial colour
+	lw $t3, backgroundColour
 	
 doodleJumpUp:	
 	addi $s7, $s7, -128			# Move doodle location exactly 1 row up
 	add $t7, $gp, $s7			# pixel of the row one up
-	sw $t3, 128($t7)			# Colour previous doodle spot with background colour
+	#sw $t3, 128($t7)			# Colour previous doodle spot with background colour
+	
+	sw $t3, 124($t7)			# Colour previous doodle spot with background colour
+	sw $t3, 132($t7)			# Colour previous doodle spot with background colour
+	sw $t3, 0($t7)				# Colour previous doodle spot with background colour
 	
 	jal processMovement			# Colour in the new spot
 	
@@ -459,8 +477,11 @@ doodleJumpUp:
 doodleJumpDown:	
 	addi $s7, $s7, 128			# Move doodle location exactly 1 row up
 	add $t7, $gp, $s7			# pixel of the row one up
-	sw $t3, -128($t7)			# Colour previous doodle spot with background colour
 	
+	sw $t3, -260($t7)			# Colour previous doodle spot with background colour
+	sw $t3, -252($t7)			# Colour previous doodle spot with background colour
+	sw $t3, -384($t7)			# Colour previous doodle spot with background colour
+		
 	jal processMovement			# Colour in the new spot
 	
 	addi $t6, $t6, -1
@@ -495,7 +516,11 @@ leftInput:
 	addi $s7, $s7, -8			# Move doodle location exactly 1 pixel left
 	add $t7, $gp, $s7			# pixel of spot to the left
 	lw $t2, backgroundColour		# $t2 stores the beige colour
-	sw $t2, 8($t7)				# Colour previous doodle spot with background colour
+	
+	sw $t2, 12($t7)				# Colour previous doodle spot with background colour
+	sw $t2, -120($t7)			# Colour previous doodle spot with background colour
+	sw $t2, -116($t7)			# Colour previous doodle spot with background colour
+	sw $t2, -248($t7)			# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
 	
@@ -503,14 +528,31 @@ rightInput:
 	addi $s7, $s7, 8			# Move doodle location exactly 1 pixel right
 	add $t7, $gp, $s7			# pixel of spot to the right
 	lw $t2, backgroundColour		# $t2 stores the beige colour
-	sw $t2, -8($t7)				# Colour previous doodle spot with background colour
+	
+	sw $t2, -12($t7)			# Colour previous doodle spot with background colour
+	sw $t2, -136($t7)			# Colour previous doodle spot with background colour
+	sw $t2, -140($t7)			# Colour previous doodle spot with background colour
+	sw $t2, -264($t7)			# Colour previous doodle spot with background colour
 	
 	j processMovement			# Colour in the new spot
 
 
 processMovement:
-	lw $t3, 0($t7)				# save colour at the new location
-	sw $a3, 0($t7)				# load doodle colour at new location
+	#lw $t3, 0($t7)				# save colour at the new location
+	#sw $a3, 0($t7)				# load doodle colour at new location
+	
+	lw $t2, doodleColour
+	lw $t1, oliveGreen
+	
+	# Draw the doodle
+	add $t5, $gp, $s7
+	
+	sw $t2, 4($t5)
+	sw $t2, -4($t5)
+	sw $t1, -128($t5)
+	sw $t1, -124($t5)
+	sw $t1, -132($t5)
+	sw $t2, -256($t5)
 	
 	jr $ra
 	
@@ -754,12 +796,13 @@ drawCharCol:
 	
 drawBouncingDoodle:
 	add $t4, $gp, $s1
-	
-	sw $t2, 0($t4)
-	sw $t2, -128($t4)
-	sw $t1, -256($t4)
-	sw $t1, -252($t4)
-	sw $t2, -384($t4)
+
+	sw $t2, 4($t4)
+	sw $t2, -4($t4)
+	sw $t1, -128($t4)
+	sw $t1, -124($t4)
+	sw $t1, -132($t4)
+	sw $t2, -256($t4)
 	
 	jr $ra		
 	
