@@ -29,6 +29,9 @@
 # Any additional information that the TA needs to know:
 # - The random platform generation might require some luck, despite 
 #   the fact I tried to make the platforms as "uniform" as possible
+# - The game unfortunately isn't as smooth as I would have liked
+#   this was due to the fact I simply ran out of time as I had multiple
+#   assignments due Dec 7th
 #
 #####################################################################
 
@@ -101,7 +104,7 @@
 main:
 	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
-	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
+	#lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	li $s3, 0				# Restart or not
 	li $s2, 0				# Score for the player
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
@@ -263,6 +266,7 @@ platformInit:
 	
 	lw $t0, displayAddress
 	li $s0, 3456				# Offset for platforms
+	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
 	
 baseDoodlePlatform:				# Initial platform for the doodle to stand on
 	addi $t7, $gp, 4020
@@ -431,7 +435,6 @@ drawSecondPixelRow:
 	
 	bne $t3, 12, drawSecondPixelRow
 	
-	#j initialKeyboardCheck
 	j doodleJumpInit
 	
 drawSecondPixelCol:
@@ -719,12 +722,16 @@ shiftPlatforms:
 	li $t6, 4
 	mult $a0, $t6
 	mflo $t6
-	add $t9, $gp, $t6
+	#add $t9, $gp, $t6
 	
-	addi $t9, $t9, 384			# Shift the platform down to have it more "spaced"
+	lw $t9, 16($s6)
+	addi $t9, $t9, -640
+	add $t6, $t6, $t9
+	
+	#addi $t9, $t9, 384			# Shift the platform down to have it more "spaced"
 		
 	# Store the platform location
-	sw $t9, 20($s6)				# Store this platform as last one in the array
+	sw $t6, 20($s6)				# Store this platform as last one in the array
 	li $s3, 1				# Means not restarting
 	j backgroundInit			# Go repaint the whole entire screen
 	
