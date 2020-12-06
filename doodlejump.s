@@ -49,6 +49,9 @@
 	doodleColour: .word 0x556b2f
 	scoreColour: .word 0x228b22
 	wordColour: .word 0x3090c7
+	darkBrown: .word 0x654321
+	oliveGreen: .word 0x6b8e23
+	olive: .word 0x808000
 	
 	# Animation
 	sleepDelay: .word 100
@@ -90,8 +93,6 @@
 	
 .text
 main:
-	lw $t1, platformColour			# $t1 stores the brown
-	lw $t2, backgroundColour		# $t2 stores the beige colour
 	la $s6, platforms 			# Array with 6 int spots for platform locations
 	lw $t9, screenSize			# Screen size
 	lw $s7, doodleStart 			# $s7 is Doodle's centre/location
@@ -118,6 +119,8 @@ drawStartBackground:
 	bne $t3, $t9, drawStartBackground
 
 drawStartText:
+	lw $a1, olive
+
 	# Draw the word "Doodle"
 	la $a0, letterD
 	li $a2, 784
@@ -152,16 +155,71 @@ drawStartText:
 	li $a2, 1616
 	jal drawCharInit
 	
+drawBouncingDoodleInit:
+	lw $t1, oliveGreen
+	lw $t2, doodleColour			# Doodle of colour
+	li $s1, 3948
+	lw $t3, backgroundColour
+	li $t6, 0
+
+bounceStaticDoodleUp:
+	addi $s1, $s1, -128			# Move doodle location exactly 1 row up
+	add $t7, $gp, $s1			# pixel of the row one up
+	sw $t3, 128($t7)			# Colour previous doodle spot with background colour
+	sw $t3, -124($t7)
+	
+	jal drawBouncingDoodle
+	
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
+	jal initialKeyboardCheck
+	
+	addi $t6, $t6, 1
+	
+	bne $t6, 8, bounceStaticDoodleUp
+	
+bounceStaticDoodleDown:
+	addi $s1, $s1, 128			# Move doodle location exactly 1 row up
+	add $t7, $gp, $s1			# pixel of the row one up
+	sw $t3, -512($t7)			# Colour previous doodle spot with background colour
+	sw $t3, -380($t7)
+	
+	jal drawBouncingDoodle
+	
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
+	jal initialKeyboardCheck
+	
+	addi $t6, $t6, -1
+	
+	bne $t6, 0, bounceStaticDoodleDown
+	
+	j bounceStaticDoodleUp
+
 initialKeyboardCheck:
 	lw $t5, 0xffff0000 
 	beq $s3, 1, doodleJumpInit
 	
 startGame:
 	lw $t5, 0xffff0004 
-	bne $t5, 0x73, initialKeyboardCheck	# the "s" key
+	beq $t5, 0x73, platformInit	# the "s" key
+	
+	jr $ra
+	
 	
 ### Generate Platforms ##
 platformInit:
+	# Sleep to delay animation
+	li $v0, 32		
+	lw $a0, sleepDelay
+	syscall
+	
 	lw $t0, displayAddress
 	li $s0, 3456				# Offset for platforms
 	
@@ -222,7 +280,7 @@ drawPlatformInit:
 	li $t4, 0				# Counter for loading array in from memory (i.e. offset)
 	li $t6, 0				# Counter for number of pixels to draw
 	lw $a0, platformWidth			# Width of each platform
-	lw $t1, platformColour
+	lw $t1, platformColour			# Colour of the platform
 		
 drawPlatform:					# Loop through to paint the platforms
 	add $t5, $s6, $t4
@@ -498,7 +556,6 @@ doodleOnPlatform:
 	addi $s2, $s2, 1			# Increment the player's score by 1 (for hitting a new platform)
 	
 	j drawMessage				
-	#j shiftPlatforms
 		
 doodleNotOnPlatform:
 	jr $ra					# Continue back to point in the program
@@ -537,6 +594,7 @@ shiftPlatforms:
 	
 ### Draw goodbye screen ###
 drawGoodbye:
+	lw $a1, wordColour
 	la $a0, letterB
 	li $a2, 1700
 	jal drawCharInit
@@ -570,6 +628,8 @@ drawMessage:
 	li $t5, 10
 	div $s2, $t5
 	mfhi $t0
+	
+	lw $a1, wordColour
 	
 	beq $t0, 0, drawGreat			# We have a multiple of 10
 	
@@ -637,7 +697,7 @@ drawCharInit:
 	addi $sp, $sp, -4			# Increase stack size
 	sw $ra, 0($sp)				# Store the return address
 
-	lw $a1, wordColour
+	#lw $a1, wordColour
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
 	
 drawCharRow:
@@ -667,6 +727,17 @@ drawCharCol:
 	bne $t5, 60, drawCharCol		# Haven't painted the whole column
 	
 	jr $ra
+	
+drawBouncingDoodle:
+	add $t4, $gp, $s1
+	
+	sw $t2, 0($t4)
+	sw $t2, -128($t4)
+	sw $t1, -256($t4)
+	sw $t1, -252($t4)
+	sw $t2, -384($t4)
+	
+	jr $ra		
 	
 Exit:
 	li $v0, 10 				# terminate the program gracefully
