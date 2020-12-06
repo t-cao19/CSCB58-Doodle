@@ -472,7 +472,7 @@ doodleJumpUp:
 	
 	jal checkPlatformInit			# Check if the doodle has reached any of the platforms before jumping again	
 	
-	bne $t6, 8, doodleJumpUp
+	bne $t6, 6, doodleJumpUp
 	
 doodleJumpDown:	
 	addi $s7, $s7, 128			# Move doodle location exactly 1 row up
@@ -588,8 +588,8 @@ checkDoodleOnPlatform:
 	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	addi $t5, $t9, -124
 	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	addi $t5, $t9, -256
-	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	addi $t5, $t9, -256			# "Head" of the doodle
+	beq $t5, $t8, doodleTop			# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	
 	addi $t8, $t8, 4
 	
@@ -601,6 +601,8 @@ checkDoodleOnPlatform:
 	j doodleNotOnPlatform
 
 doodleLeftLeg:
+	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
+	
 	lw $t0, platformColour
 	sw $t0, 0($t5)
 	
@@ -611,7 +613,7 @@ doodleLeftLeg:
 	addi $t3, $t9, 4
 	sub $t4, $s0, $t3
 	
-	bgez $t4, rightLegInRange
+	bgtz $t4, rightLegInRange
 	
 	sw $t0, 0($t3)
 	j doodleOnPlatform
@@ -622,6 +624,8 @@ rightLegInRange:
 	j doodleOnPlatform
 	
 doodleRightLeg:
+	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
+
 	lw $t0, platformColour
 	sw $t0, 0($t5)
 	
@@ -644,13 +648,18 @@ leftLegInRange:
 	sw $0, 0($t3)
 	j doodleOnPlatform
 
+doodleTop:
+	addi $s7, $s7, -384			# Doodle reached a platform so place it directly above the platform
+	
+	j doodleOnPlatform
+
 doodleOnPlatform:
 	
 	#lw $t0, platformColour			# Load platform colour
 	#sw $t0, 0($t5)				# Store platform colour where doodle hit platform
 	#sw $t0, 8($t5)	
 	
-	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
+	#addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 
 	lw $t3, backgroundColour		# Replace previous pixels with background colour
 	
@@ -695,7 +704,6 @@ shiftPlatforms:
 	addi $t9, $t9, 4
 	bne $t9, 20, shiftPlatforms
 	
-	
 	# Generate a random platform coordinate
 	li $v0, 42
 	li $a0, 0
@@ -709,7 +717,7 @@ shiftPlatforms:
 	mflo $t6
 	add $t9, $gp, $t6
 	
-	addi $t9, $t9, 896 			# Shift the platform down to have it more "spaced"
+	addi $t9, $t9, 384			# Shift the platform down to have it more "spaced"
 		
 	# Store the platform location
 	sw $t9, 20($s6)				# Store this platform as last one in the array
