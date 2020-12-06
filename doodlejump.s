@@ -235,7 +235,7 @@ bounceStaticDoodleDown:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	move $a0, $v1
+	li $a0, 40
 	syscall
 	
 	jal initialKeyboardCheck
@@ -507,8 +507,9 @@ doodleJumpDown:
 	addi $t6, $t6, -1
 	
 	# Sleep to delay animation
-	li $v0, 32		
-	move $a0, $v1
+	li $v0, 32
+	li $a0, 40	
+	#move $a0, $v1
 	syscall
 	
 	jal keyboardCheck			# Check if any of the keys are pressed
@@ -517,6 +518,7 @@ doodleJumpDown:
 	
 	addi $t5, $s7, -4068
 	bgez $t5, drawEndInit			# Fell off screen, paint goodbye
+	
 	
 	bne $t6, 10, doodleJumpDown
 	
