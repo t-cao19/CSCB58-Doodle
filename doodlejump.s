@@ -52,6 +52,9 @@
 	darkBrown: .word 0x654321
 	oliveGreen: .word 0x6b8e23
 	olive: .word 0x808000
+	goldenRod: .word 0xfffacd
+	forestGreen: .word 0x228b22
+	lightGreen: .word 0x98fb98
 	
 	# Animation
 	sleepDelay: .word 100
@@ -90,7 +93,6 @@
 	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
 	 exclaimMark: .word 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0
 	 
-	
 .text
 main:
 	la $s6, platforms 			# Array with 6 int spots for platform locations
@@ -109,7 +111,7 @@ drawStartInit:
   
 	li $t3, 0 				# Counter for filling in background
 	lw $t0, displayAddress
-	lw $t2, backgroundColour		# $t2 stores the beige colour
+	lw $t2, goldenRod			
 	lw $t9, screenSize			# Screen size
 
 drawStartBackground:
@@ -119,47 +121,79 @@ drawStartBackground:
 	bne $t3, $t9, drawStartBackground
 
 drawStartText:
-	lw $a1, olive
+	lw $a1, doodleColour
 
 	# Draw the word "Doodle"
 	la $a0, letterD
-	li $a2, 784
+	li $a2, 144
 	jal drawCharInit
 	la $a0, letterO
-	li $a2, 800
+	li $a2, 160
 	jal drawCharInit
 	la $a0, letterO
-	li $a2, 816
+	li $a2, 176
 	jal drawCharInit 
 	la $a0, letterD
-	li $a2, 832
+	li $a2, 192
 	jal drawCharInit
 	la $a0, letterL
-	li $a2, 848
+	li $a2, 208
 	jal drawCharInit
 	la $a0, letterE
-	li $a2, 864
+	li $a2, 224
 	jal drawCharInit
 	
 	# Draw the word "jump"
 	la $a0, letterJ
-	li $a2, 1568
+	li $a2, 928
 	jal drawCharInit
 	la $a0, letterU
-	li $a2, 1584
+	li $a2, 944
 	jal drawCharInit
 	la $a0, letterM
-	li $a2, 1600
+	li $a2, 960
 	jal drawCharInit 
 	la $a0, letterP
-	li $a2, 1616
+	li $a2, 976
 	jal drawCharInit
 	
+	lw $a1, darkBrown
+	
+	# Draw the char "s"
+	la $a0, letterS
+	li $a2, 1928
+	jal drawCharInit
+	
+	# Draw the word "to"
+	la $a0, letterT
+	li $a2, 1948
+	jal drawCharInit
+	la $a0, letterO
+	li $a2, 1964
+	jal drawCharInit
+	
+	# Draw the word "start"
+	la $a0, letterS
+	li $a2, 2696
+	jal drawCharInit
+	la $a0, letterT
+	li $a2, 2712
+	jal drawCharInit
+	la $a0, letterA
+	li $a2, 2728
+	jal drawCharInit
+	la $a0, letterR
+	li $a2, 2744
+	jal drawCharInit
+	la $a0, letterT
+	li $a2, 2760
+	jal drawCharInit
+
 drawBouncingDoodleInit:
 	lw $t1, oliveGreen
 	lw $t2, doodleColour			# Doodle of colour
 	li $s1, 3948
-	lw $t3, backgroundColour
+	lw $t3, goldenRod 
 	li $t6, 0
 
 bounceStaticDoodleUp:
