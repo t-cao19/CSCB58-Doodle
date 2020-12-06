@@ -40,7 +40,7 @@
 	displayAddress:	.word	0x10008000
 	screenWidth: 	.word 512
 	screenHeight: 	.word 512
-	platformWidth: .word  6
+	platformWidth: .word  28
 	screenSize: .word 1024
 	
 	# Coordinates
@@ -107,12 +107,14 @@ main:
 	li $s3, 0				# Restart or not
 	li $s2, 0				# Score for the player
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
-	
+	lw $a3, platformWidth			# Platform width
+	lw $v1, sleepDelay
+			
 ### Start Screen ###
 drawStartInit:
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
   
 	li $t3, 0 				# Counter for filling in background
@@ -214,7 +216,7 @@ bounceStaticDoodleUp:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
 	
 	jal initialKeyboardCheck
@@ -234,7 +236,7 @@ bounceStaticDoodleDown:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
 	
 	jal initialKeyboardCheck
@@ -260,7 +262,7 @@ startGame:
 platformInit:
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
 	
 	lw $t0, displayAddress
@@ -281,9 +283,9 @@ generatePlatform:
 	# Generate a random platform coordinate with range 7-28 on the screen
 	li $v0, 42
 	li $a0, 0
-	li $a1, 21
+	li $a1, 18
 	syscall
-	addi $a0, $a0, 7
+	addi $a0, $a0, 10
 	
 	# Multiply the platform by 4
 	li $t6, 4
@@ -294,7 +296,7 @@ generatePlatform:
 	
 	# Store the platform location AND it's endpoint
 	sw $t7, 0($t5)
-	addi $t7, $t7, 24
+	add $t7, $t7, $a3
 	sw $t7, 4($t5)
 	
 	addi $t3, $t3, 8			# Move offset by 4 into next array position
@@ -305,7 +307,7 @@ generatePlatform:
 backgroundInit:
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
   
 	li $t3, 0 				# Counter for filling in background
@@ -322,7 +324,7 @@ backgroundLoop:
 ### Draw Doodle ###
 doodledraw:
 	lw $t1, oliveGreen
-	lw $t2, doodleColour			# $a3 stores colour of doodle
+	lw $t2, doodleColour			
 	
 	# Draw the doodle
 	add $t5, $gp, $s7
@@ -352,7 +354,7 @@ drawPlatform:					# Loop through to paint the platforms
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
 	
 	j drawFirstScoreInit
@@ -482,7 +484,7 @@ doodleJumpUp:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
 	
 	jal keyboardCheck			# Check if any of the keys are pressed
@@ -506,7 +508,7 @@ doodleJumpDown:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
 	
 	jal keyboardCheck			# Check if any of the keys are pressed
@@ -742,7 +744,7 @@ shiftPlatforms:
 		
 	# Store the platform location
 	sw $t6, 40($s6)				# Store this platform as last one in the array
-	addi $t6, $t6, 24
+	add $t6, $t6, $a3
 	sw $t6, 44($s6)				# Sore ENDPOINT of the new platform
 	li $s3, 1				# Means not restarting
 	j backgroundInit			# Go repaint the whole entire screen
@@ -752,7 +754,7 @@ shiftPlatforms:
 drawEndInit:
 	# Sleep to delay animation
 	li $v0, 32		
-	lw $a0, sleepDelay
+	move $a0, $v1
 	syscall
   
 	li $t3, 0 				# Counter for filling in background
@@ -1010,9 +1012,10 @@ drawWow:
 	li $a0, 300
 	syscall
 	
-	beq $s1, 2, noDecrease			# Don't want to allow - amount of jumping
-	
-	addi $s1, $s1, -2
+	beq $a3, 8, noDecrease			# Want platforms to be at least 2 pixels wide				
+	addi $a3, $a3, -4			# Decrease the platform length
+	beq $v1, 60, noDecrease			# Need at least 60 rates for sleep
+	addi $v1, $v1, -10			# Decrease sleep delay to make game seem faster
 	
 	add $t9, $zero, $zero
 	j shiftPlatforms			# Jump back to shifting platform
@@ -1045,6 +1048,9 @@ drawGreat:
 	li $v0, 32		
 	li $a0, 300
 	syscall
+	
+	beq $s1, 2, noDecrease			# Don't want to allow - amount of jumping
+	addi $s1, $s1, -4			# Decrease the bounce allowed by the doodle
 	
 	add $t9, $zero, $zero
 	j shiftPlatforms			# Jump back to shifting platform
