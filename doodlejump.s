@@ -571,12 +571,25 @@ checkPlatformInit:
 retrievePlatform:
 	add $t5, $s6, $t4			# Array Position
 	lw $t8, 0($t5)				# Load platform coordinate from array
+	add $s5, $zero, $t8
 	addi $s0, $t8, 24			# 6 pixels down from platform
 	
 	
 checkDoodleOnPlatform:
 	add $t9, $gp, $s7			# Address of doodle
-	beq $t9, $t8, doodleOnPlatform		# Doodle is on the platform, $t8 is the PLATFORM that was "hit"	
+	
+	addi $t5, $t9, -4
+	beq $t5, $t8, doodleLeftLeg		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	addi $t5, $t9, 4	
+	beq $t5, $t8, doodleRightLeg		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	addi $t5, $t9, -132
+	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	addi $t5, $t9, -128
+	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	addi $t5, $t9, -124
+	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
+	addi $t5, $t9, -256
+	beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	
 	addi $t8, $t8, 4
 	
@@ -587,10 +600,55 @@ checkDoodleOnPlatform:
 	
 	j doodleNotOnPlatform
 
+doodleLeftLeg:
+	lw $t0, platformColour
+	sw $t0, 0($t5)
+	
+	lw $t0, backgroundColour
+	sw $t0, -124($t5)
+	
+	# Check if the "right" leg hit a point that was out of platform
+	addi $t3, $t9, 4
+	sub $t4, $s0, $t3
+	
+	bgez $t4, rightLegInRange
+	
+	sw $t0, 0($t3)
+	j doodleOnPlatform
+	
+rightLegInRange:
+	lw $t0, platformColour
+	sw $t0, 0($t3)
+	j doodleOnPlatform
+	
+doodleRightLeg:
+	lw $t0, platformColour
+	sw $t0, 0($t5)
+	
+	lw $t0, backgroundColour
+	sw $t0, -132($t5)
+	
+	addi $t3, $t9, -4
+	
+	# Check if the "left" leg hit a point that was out of platform
+	addi $t3, $t9, -4
+	sub $t4, $t3, $s5
+	
+	bgez $t4, leftLegInRange
+	
+	sw $t0, 0($t3)
+	j doodleOnPlatform
+
+leftLegInRange:
+	lw $t0, platformColour
+	sw $0, 0($t3)
+	j doodleOnPlatform
+
 doodleOnPlatform:
 	
-	lw $t0, platformColour			# Load platform colour
-	sw $t0, 0($t9)				# Store platform colour where doodle hit platform	
+	#lw $t0, platformColour			# Load platform colour
+	#sw $t0, 0($t5)				# Store platform colour where doodle hit platform
+	#sw $t0, 8($t5)	
 	
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 
