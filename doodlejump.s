@@ -316,10 +316,8 @@ backgroundLoop:
 	
 ### Draw Doodle ###
 doodledraw:
-	lw $t0, oliveGreen
-	lw $a3, doodleColour			# $a3 stores colour of doodle
-	#add $t5, $gp, $s7
-	#sw $a3, 0($t5)				# Draw the doodle
+	lw $t1, oliveGreen
+	lw $t2, doodleColour			# $a3 stores colour of doodle
 	
 	# Draw the doodle
 	add $t5, $gp, $s7
@@ -341,12 +339,8 @@ drawPlatformInit:
 drawPlatform:					# Loop through to paint the platforms
 	add $t5, $s6, $t4
 	lw $t7, 0($t5)
-	sw $t1, 0($t7)
-	sw $t1, 4($t7)
-	sw $t1, 8($t7)
-	sw $t1, 12($t7)
-	sw $t1, 16($t7)
-	sw $t1, 20($t7)
+	add $t2, $zero, $zero
+	jal drawPlatformPixels			# Draw each platform pixel
 	addi $t4, $t4, 4
 	
 	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
@@ -355,6 +349,17 @@ drawPlatform:					# Loop through to paint the platforms
 	li $v0, 32		
 	lw $a0, sleepDelay
 	syscall
+	
+	j drawFirstScoreInit
+	
+drawPlatformPixels:
+	add $t3, $t7, $t2
+	sw $t1, 0($t3)
+	addi $t2, $t2, 4
+	bne $t2, 24, drawPlatformPixels
+	
+	jr $ra
+	
 	
 ### Draw score in top left corner ###
 drawFirstScoreInit:
