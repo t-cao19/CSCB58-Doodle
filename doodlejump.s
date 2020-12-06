@@ -49,7 +49,7 @@
 	doodleColour: .word 0x556b2f
 	scoreColour: .word 0x228b22
 	wordColour: .word 0x3090c7
-	darkBrown: .word 0x654321
+	darkBrown: .word 0xcd853f
 	oliveGreen: .word 0x6b8e23
 	olive: .word 0x808000
 	goldenRod: .word 0xfffacd
@@ -161,32 +161,32 @@ drawStartText:
 	
 	# Draw the char "s"
 	la $a0, letterS
-	li $a2, 1928
+	li $a2, 2440
 	jal drawCharInit
 	
 	# Draw the word "to"
 	la $a0, letterT
-	li $a2, 1948
+	li $a2, 2460
 	jal drawCharInit
 	la $a0, letterO
-	li $a2, 1964
+	li $a2, 2476
 	jal drawCharInit
 	
 	# Draw the word "start"
 	la $a0, letterS
-	li $a2, 2696
+	li $a2, 3208
 	jal drawCharInit
 	la $a0, letterT
-	li $a2, 2712
+	li $a2, 3224
 	jal drawCharInit
 	la $a0, letterA
-	li $a2, 2728
+	li $a2, 3240
 	jal drawCharInit
 	la $a0, letterR
-	li $a2, 2744
+	li $a2, 3256
 	jal drawCharInit
 	la $a0, letterT
-	li $a2, 2760
+	li $a2, 3272
 	jal drawCharInit
 
 drawBouncingDoodleInit:
@@ -431,16 +431,6 @@ drawSecondPixelCol:
 	
 done:
 	jr $ra
-	
-### Check for Keyboard Input ###
-#initialKeyboardCheck:
-#	lw $t5, 0xffff0000 
-#	beq $t5, 1, startGame
-#	beq $s3, 1, doodleJumpInit
-	
-#startGame:
-#	lw $t5, 0xffff0004 
-#	bne $t5, 0x73, initialKeyboardCheck	# the "s" key
 	
 doodleJumpInit:
 	li $t6, 0
