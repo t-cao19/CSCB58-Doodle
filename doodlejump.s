@@ -89,6 +89,7 @@
 	 letterS: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
 	 letterT: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0
 	 letterU: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
+	 letterV: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0
 	 letterW: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1
 	 letterY: .word 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0
 	 exclaimMark: .word 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0
@@ -496,7 +497,7 @@ doodleJumpDown:
 	jal checkPlatformInit			# Check if the doodle landed on any of the platforms
 	
 	addi $t5, $s7, -4068
-	bgez $t5, drawGoodbye			# Fell off screen, paint goodbye
+	bgez $t5, drawGameOver			# Fell off screen, paint goodbye
 	
 	bne $t6, 10, doodleJumpDown
 	
@@ -725,19 +726,38 @@ shiftPlatforms:
 	j backgroundInit			# Go repaint the whole entire screen
 	
 ### Draw goodbye screen ###
-drawGoodbye:
+drawGameOver:
 	lw $a1, wordColour
-	la $a0, letterB
-	li $a2, 1700
+	
+	# Draw the word "game"
+	la $a0, letterG
+	li $a2, 1184
 	jal drawCharInit
-	la $a0, letterY
-	li $a2, 1716
+	la $a0, letterA
+	li $a2, 1200
+	jal drawCharInit
+	la $a0, letterM
+	li $a2, 1216
+	jal drawCharInit 
+	la $a0, letterE
+	li $a2, 1232
+	jal drawCharInit
+	
+	# Draw the word "over!"
+	la $a0, letterO
+	li $a2, 1952
+	jal drawCharInit
+	la $a0, letterV
+	li $a2, 1968
 	jal drawCharInit
 	la $a0, letterE
-	li $a2, 1732
+	li $a2, 1984
+	jal drawCharInit 
+	la $a0, letterR
+	li $a2, 2000
 	jal drawCharInit
 	la $a0, exclaimMark
-	li $a2, 1744
+	li $a2, 2012
 	jal drawCharInit
 	
 	j checkRestartInit
