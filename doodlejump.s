@@ -19,7 +19,7 @@
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
 # 1. Fancier Graphics
-# 2. (Dynamic on-screen notifications
+# 2. Dynamic on-screen notifications
 # 3. (fill in the feature, if any)
 # ... (add more if necessary)
 #
@@ -44,7 +44,7 @@
 	screenSize: .word 1024
 	
 	# Coordinates
-	platforms: .space 24
+	platforms: .space 48
 	doodleStart: .word 3904
 	
 	# Colours
@@ -271,7 +271,9 @@ platformInit:
 baseDoodlePlatform:				# Initial platform for the doodle to stand on
 	addi $t7, $gp, 4020
 	sw $t7, 0($s6)
-	addi $t3, $zero, 4			# Counter/Offset for the array - Set to 4 as need base platform
+	addi $t7, $t7, 24			# End point
+	sw $t7, 4($s6)
+	addi $t3, $zero, 8			# Counter/Offset for the array - Set to 4 as need base platform
 		
 generatePlatform:
 	add $t5, $s6, $t3 			# Current array location
@@ -290,11 +292,14 @@ generatePlatform:
 	add $t7, $gp, $t6
 	add $t7, $t7, $s0
 	
-	# Store the platform location
+	# Store the platform location AND it's endpoint
 	sw $t7, 0($t5)
-	addi $t3, $t3, 4			# Move offset by 4 into next array position
+	addi $t7, $t7, 24
+	sw $t7, 4($t5)
+	
+	addi $t3, $t3, 8			# Move offset by 4 into next array position
 	addi $s0, $s0, -640
-	bne $t3, 24, generatePlatform
+	bne $t3, 48, generatePlatform
 	
 ### Fill Background ###
 backgroundInit:
@@ -338,12 +343,12 @@ drawPlatformInit:
 		
 drawPlatform:					# Loop through to paint the platforms
 	add $t5, $s6, $t4
-	lw $t7, 0($t5)
-	add $t2, $zero, $zero
+	lw $t7, 0($t5)				# Platform START point
+	lw $t2, 4($t5)				# Platform END point
 	jal drawPlatformPixels			# Draw each platform pixel
-	addi $t4, $t4, 4
+	addi $t4, $t4, 8
 	
-	bne $t4, 24, drawPlatform		# Have not painted all 6 platforms
+	bne $t4, 48, drawPlatform		# Have not painted all 6 platforms
 	
 	# Sleep to delay animation
 	li $v0, 32		
@@ -353,10 +358,10 @@ drawPlatform:					# Loop through to paint the platforms
 	j drawFirstScoreInit
 	
 drawPlatformPixels:
-	add $t3, $t7, $t2
-	sw $t1, 0($t3)
-	addi $t2, $t2, 4
-	bne $t2, 24, drawPlatformPixels
+	#add $t7, $t7, $t2
+	sw $t1, 0($t7)
+	addi $t7, $t7, 4
+	bne $t7, $t2, drawPlatformPixels
 	
 	jr $ra
 	
@@ -583,7 +588,8 @@ retrievePlatform:
 	add $t5, $s6, $t4			# Array Position
 	lw $t8, 0($t5)				# Load platform coordinate from array
 	add $s5, $zero, $t8
-	addi $s0, $t8, 24			# 6 pixels down from platform
+	lw $s0, 4($t5)
+	#addi $s0, $t8, 24			# 6 pixels down from platform
 	
 	
 checkDoodleOnPlatform:
@@ -606,8 +612,8 @@ checkDoodleOnPlatform:
 	
 	bne $t8, $s0, checkDoodleOnPlatform	# Haven't finished checking all of the platform
 	
-	addi $t4, $t4, 4			# Move to next platform in list (a.k.a finishing checking one platform)
-	bne $t4, 24, retrievePlatform		# Haven't finished checking all the platforms
+	addi $t4, $t4, 8			# Move to next platform in list (a.k.a finishing checking one platform)
+	bne $t4, 48, retrievePlatform		# Haven't finished checking all the platforms
 	
 	j doodleNotOnPlatform
 
@@ -707,13 +713,15 @@ doodleNotOnPlatform:
 
 ### Scroll the screen ###
 shiftPlatforms:
-		
 	add $t6, $s6, $t9			# Array offset/position
-	lw $a2, 4($t6)				# Get platform in that array position
+	lw $a2, 8($t6)				# Get platform in that array position
 	addi $a2, $a2, 384			# Shift platforms 3 rows downwards
 	sw $a2, 0($t6)				# Store this new platform coordinate in the previous spot i.e. A[i] = A[i + 1]
-	addi $t9, $t9, 4
-	bne $t9, 20, shiftPlatforms
+	lw $a2, 12($t6)				# Get ENDPOINT
+	addi $a2, $a2, 384			# Shift ENDPOINT
+	sw $a2, 4($t6)
+	addi $t9, $t9, 8
+	bne $t9, 40, shiftPlatforms
 	
 	# Generate a random platform coordinate
 	li $v0, 42
@@ -728,12 +736,14 @@ shiftPlatforms:
 	mflo $t6
 	#add $t9, $gp, $t6
 	
-	lw $t9, 16($s6)
-	addi $t9, $t9, -512
+	lw $t9, 32($s6)				# Previous last platform in the platforms array
+	addi $t9, $t9, -512			# Shift that platform
 	add $t6, $t6, $t9
 		
 	# Store the platform location
-	sw $t6, 20($s6)				# Store this platform as last one in the array
+	sw $t6, 40($s6)				# Store this platform as last one in the array
+	addi $t6, $t6, 24
+	sw $t6, 44($s6)				# Sore ENDPOINT of the new platform
 	li $s3, 1				# Means not restarting
 	j backgroundInit			# Go repaint the whole entire screen
 	
@@ -958,6 +968,7 @@ checkRestart:
 	
 ### Draw On-Screen Notifications ###
 drawMessage:
+	add $t9, $zero, $zero
 	beq $s2, 0, shiftPlatforms 		# 0 does not count as wow! or great!
 	
 	# Check if the current score is a multiple of 5
@@ -976,6 +987,7 @@ drawMessage:
 	
 	beq $t0, 0, drawWow 			# We have a multiple of 5
 	
+	add $t9, $zero, $zero
 	j shiftPlatforms			# None of the above, so we just shift platforms
 	
 
@@ -1002,9 +1014,11 @@ drawWow:
 	
 	addi $s1, $s1, -2
 	
+	add $t9, $zero, $zero
 	j shiftPlatforms			# Jump back to shifting platform
 
 noDecrease:
+	add $t9, $zero, $zero
 	j shiftPlatforms
 	
 drawGreat:
@@ -1032,6 +1046,7 @@ drawGreat:
 	li $a0, 300
 	syscall
 	
+	add $t9, $zero, $zero
 	j shiftPlatforms			# Jump back to shifting platform
 	
 		
