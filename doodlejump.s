@@ -14,14 +14,13 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 1/2/3/4/5 (choose the one the applies)
+# - Milestone 5
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
 # 1. Fancier Graphics
 # 2. Dynamic on-screen notifications
-# 3. (fill in the feature, if any)
-# ... (add more if necessary)
+# 3. Gravity
 #
 # Link to video demonstration for final submission:
 # - (insert YouTube / MyMedia / other URL here). 
@@ -59,9 +58,10 @@
 	goldenRod: .word 0xfffacd
 	forestGreen: .word 0x228b22
 	lightGreen: .word 0x98fb98
+	maroon: .word 0xa52a2a
 	
 	# Animation
-	sleepDelay: .word 100
+	sleepDelay: .word 90
 	
 	# Pixels of Numbers 0-9
 	allNumbers: .word 
@@ -90,7 +90,8 @@
 	 letterM: .word 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1
 	 letterO: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0 ,1, 1, 1, 1
 	 letterP: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0
-	 letterR: .word 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1
+	 letterR: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1
+	 #letterR: .word 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1
 	 letterS: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
 	 letterT: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0
 	 letterU: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
@@ -173,10 +174,10 @@ drawStartText:
 	
 	# Draw the word "to"
 	la $a0, letterT
-	li $a2, 2460
+	li $a2, 2464
 	jal drawCharInit
 	la $a0, letterO
-	li $a2, 2476
+	li $a2, 2480
 	jal drawCharInit
 	
 	# Draw the word "start"
@@ -196,6 +197,7 @@ drawStartText:
 	li $a2, 3272
 	jal drawCharInit
 
+### Draw a bouncing doodle on the start screen ###
 drawBouncingDoodleInit:
 	lw $t1, oliveGreen
 	lw $t2, doodleColour			# Doodle of colour
@@ -235,14 +237,14 @@ bounceStaticDoodleDown:
 	
 	# Sleep to delay animation
 	li $v0, 32		
-	li $a0, 40
+	li $a0, 50
 	syscall
 	
 	jal initialKeyboardCheck
 	
 	addi $t6, $t6, -1
 	
-	bne $t6, 0, bounceStaticDoodleDown
+	bne $t6, 0, bounceStaticDoodleDown	# The static doodle did not bounce all the way down
 	
 	j bounceStaticDoodleUp
 
@@ -252,13 +254,13 @@ initialKeyboardCheck:
 	
 startGame:
 	lw $t5, 0xffff0004 
-	beq $t5, 0x73, platformInit	# the "s" key
+	beq $t5, 0x73, platformInit		# the "s" key
 	
 	jr $ra
 	
-	
 ### Generate Platforms ##
 platformInit:
+
 	# Sleep to delay animation
 	li $v0, 32		
 	move $a0, $v1
@@ -270,6 +272,7 @@ platformInit:
 	li $s1, 8				# How much the doodle can jump up/down by
 	li $s2, 0				# Score for the player
 	
+
 baseDoodlePlatform:				# Initial platform for the doodle to stand on
 	addi $t7, $gp, 4020
 	sw $t7, 0($s6)
@@ -303,6 +306,7 @@ generatePlatform:
 	addi $s0, $s0, -640
 	bne $t3, 48, generatePlatform
 	
+	
 ### Fill Background ###
 backgroundInit:
 	# Sleep to delay animation
@@ -320,6 +324,7 @@ backgroundLoop:
 	add $t0, $t0, 4				# Move along the screen
 	addi $t3, $t3, 1
 	bne $t3, $t9, backgroundLoop
+	
 	
 ### Draw Doodle ###
 doodledraw:
@@ -359,8 +364,8 @@ drawPlatform:					# Loop through to paint the platforms
 	
 	j drawFirstScoreInit
 	
+# Draw the pixel of each platform
 drawPlatformPixels:
-	#add $t7, $t7, $t2
 	sw $t1, 0($t7)
 	addi $t7, $t7, 4
 	bne $t7, $t2, drawPlatformPixels
@@ -415,6 +420,7 @@ drawFirstPixelCol:
 	
 	jr $ra
 	
+### Draw second digit of the score ###
 drawSecondScoreInit:
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
 	
@@ -465,6 +471,7 @@ drawSecondPixelCol:
 done:
 	jr $ra
 	
+### Start animnating the doodle to jump up and down ###
 doodleJumpInit:
 	li $t6, 0
 	lw $t3, backgroundColour
@@ -508,8 +515,7 @@ doodleJumpDown:
 	
 	# Sleep to delay animation
 	li $v0, 32
-	li $a0, 40	
-	#move $a0, $v1
+	li $a0, 50	
 	syscall
 	
 	jal keyboardCheck			# Check if any of the keys are pressed
@@ -522,6 +528,7 @@ doodleJumpDown:
 	
 	bne $t6, 10, doodleJumpDown
 	
+### Perform keyboard check ###
 keyboardCheck:
 	lw $t5, 0xffff0000 
 	beq $t5, 1, keyboardInput
@@ -559,6 +566,7 @@ rightInput:
 	j processMovement			# Colour in the new spot
 
 
+### Redraw the doodle ###
 processMovement:
 	lw $t2, doodleColour
 	lw $t1, oliveGreen
@@ -588,12 +596,12 @@ checkPlatformInit:
 	addi $sp, $sp, 4			# Shrink the stack back
 	jr $ra
 	
-retrievePlatform:
+	
+retrievePlatform:				# Load platforms
 	add $t5, $s6, $t4			# Array Position
 	lw $t8, 0($t5)				# Load platform coordinate from array
 	add $s5, $zero, $t8
 	lw $s0, 4($t5)
-	#addi $s0, $t8, 24			# 6 pixels down from platform
 	
 	
 checkDoodleOnPlatform:
@@ -603,12 +611,6 @@ checkDoodleOnPlatform:
 	beq $t5, $t8, doodleLeftLeg		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	addi $t5, $t9, 4	
 	beq $t5, $t8, doodleRightLeg		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	#addi $t5, $t9, -132
-	#beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	#addi $t5, $t9, -128
-	#beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
-	#addi $t5, $t9, -124
-	#beq $t5, $t8, doodleOnPlatform		# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	addi $t5, $t9, -256			# "Head" of the doodle
 	beq $t5, $t8, doodleTop			# Doodle is on the platform, $t5 is the PLATFORM that was "hit"
 	
@@ -621,7 +623,7 @@ checkDoodleOnPlatform:
 	
 	j doodleNotOnPlatform
 
-doodleLeftLeg:
+doodleLeftLeg:					# Doodle left leg hit the platform
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 	
 	lw $t0, platformColour
@@ -644,7 +646,7 @@ rightLegInRange:
 	sw $t0, 0($t3)
 	j doodleOnPlatform
 	
-doodleRightLeg:
+doodleRightLeg:					# Doodle right leg hit the platform
 	addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 
 	lw $t0, platformColour
@@ -675,12 +677,6 @@ doodleTop:
 	j doodleOnPlatform
 
 doodleOnPlatform:
-	
-	#lw $t0, platformColour			# Load platform colour
-	#sw $t0, 0($t5)				# Store platform colour where doodle hit platform
-	#sw $t0, 8($t5)	
-	
-	#addi $s7, $s7, -128			# Doodle reached a platform so place it directly above the platform
 
 	lw $t3, backgroundColour		# Replace previous pixels with background colour
 	
@@ -752,7 +748,7 @@ shiftPlatforms:
 	j backgroundInit			# Go repaint the whole entire screen
 	
 	
-### Start Screen ###
+### Draw the end screen ###
 drawEndInit:
 	# Sleep to delay animation
 	li $v0, 32		
@@ -827,16 +823,16 @@ drawGameOver:
 	li $a2, 1872
 	jal drawCharInit
 	
-	lw $a1, oliveGreen
+	lw $a1, maroon
 	# Draw the word "S to"
 	la $a0, letterS
 	li $a2, 2564
 	jal drawCharInit
 	la $a0, letterT
-	li $a2, 2580
+	li $a2, 2588
 	jal drawCharInit
 	la $a0, letterO
-	li $a2, 2596
+	li $a2, 2604
 	jal drawCharInit
 	
 	# Draw the word "restart"
@@ -863,7 +859,7 @@ drawGameOver:
 	jal drawCharInit
 	
 	
-### Draw score in top left corner ###
+### Draw score on the end screen ###
 drawFirstEndScoreInit:
 	lw $a1, scoreColour
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
@@ -892,9 +888,9 @@ drawFirstEndScoreRow:
 	jal drawFirstEndScoreCol
 	addi $t3, $t3, 4
 	
-	bne $t3, 12, drawFirstEndScoreRow		# Not done drawing the number for the first score
+	bne $t3, 12, drawFirstEndScoreRow	# Not done drawing the number for the first score
 	
-	j drawSecondScoreEndInit			# Done and now paint the second digit of the score
+	j drawSecondScoreEndInit		# Done and now paint the second digit of the score
 	
 drawFirstEndScoreCol:
 	beq $t5, 60, done			# If we're done for that row
@@ -953,10 +949,10 @@ drawSecondEndScoreCol:
 	
 	addi $t5, $t5, 12			# Increase the column skipping count
 	addi $t4, $t4, 128			# Jump to next row of the screen
-	beq $t7, 0, drawSecondEndScoreCol		# If the value was a 0, we DO NOT draw
+	beq $t7, 0, drawSecondEndScoreCol	# If the value was a 0, we DO NOT draw
 	
 	sw $a1, -128($t4)
-	bne $t5, 60, drawSecondEndScoreCol		# Haven't painted the whole column
+	bne $t5, 60, drawSecondEndScoreCol	# Haven't painted the whole column
 	
 	jr $ra
 	
@@ -996,6 +992,8 @@ drawMessage:
 	
 
 drawWow:
+
+	# Draw the word "Wow!"
 	la $a0, letterW
 	li $a2, 36
 	jal drawCharInit
@@ -1009,7 +1007,7 @@ drawWow:
 	li $a2, 84
 	jal drawCharInit
 	
-	# Sleep to delay animation
+	# Sleep to delay animation and let message stay longer
 	li $v0, 32		
 	li $a0, 300
 	syscall
@@ -1027,6 +1025,8 @@ noDecrease:
 	j shiftPlatforms
 	
 drawGreat:
+
+	# Draw the word "Great!" on to the screen
 	la $a0, letterG
 	li $a2, 36
 	jal drawCharInit
@@ -1046,7 +1046,7 @@ drawGreat:
 	li $a2, 112
 	jal drawCharInit
 	
-	# Sleep to delay animation
+	# Sleep to delay animation and let message stay longer
 	li $v0, 32		
 	li $a0, 300
 	syscall
@@ -1058,12 +1058,11 @@ drawGreat:
 	j shiftPlatforms			# Jump back to shifting platform
 	
 		
-### Draw a character in general ###		
+### Drawing a generic character in general ###		
 drawCharInit:
 	addi $sp, $sp, -4			# Increase stack size
 	sw $ra, 0($sp)				# Store the return address
 
-	#lw $a1, wordColour
 	addi $t3, $zero, 0			# Counter for going through all 3 columns (i.e. i)
 	
 drawCharRow:
@@ -1095,6 +1094,8 @@ drawCharCol:
 	jr $ra
 	
 drawBouncingDoodle:
+	# This function is used to "animate" the bouncing doodle on the start screen
+
 	add $t4, $gp, $s1
 
 	sw $t2, 4($t4)
