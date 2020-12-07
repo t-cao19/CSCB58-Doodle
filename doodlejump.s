@@ -23,7 +23,7 @@
 # 3. Gravity
 #
 # Link to video demonstration for final submission:
-# - (insert YouTube / MyMedia / other URL here). 
+# - https://play.library.utoronto.ca/98315d22eaaa5e27b8d0b627344df334
 #
 # Any additional information that the TA needs to know:
 # - The random platform generation might require some luck, despite 
@@ -91,7 +91,6 @@
 	 letterO: .word 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0 ,1, 1, 1, 1
 	 letterP: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0
 	 letterR: .word 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1
-	 #letterR: .word 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1
 	 letterS: .word 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1
 	 letterT: .word 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0
 	 letterU: .word 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1
@@ -107,7 +106,6 @@ main:
 	lw $t9, screenSize			# Screen size
 	li $s3, 0				# Restart or not
 	la $s4, allNumbers			# Address of the array of all the pixel numbers
-	lw $a3, platformWidth			# Platform width
 	lw $v1, sleepDelay
 			
 ### Start Screen ###
@@ -260,6 +258,7 @@ startGame:
 	
 ### Generate Platforms ##
 platformInit:
+	lw $a3, platformWidth			# Platform width
 
 	# Sleep to delay animation
 	li $v0, 32		
